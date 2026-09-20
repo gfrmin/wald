@@ -233,6 +233,7 @@ class Pack:
         self.cells.declare_param(given["name"], given["value"], self.source(given, call))
 
     def say_prior(self, call):
+        self.components()   # the prior's keys are states of the space, so the space is named first
         given = self.arguments(call, ("table",), ("source",), ("table",))
         self.prior_source = self.source(given, call)
         if not isinstance(given["table"], ast.Dict):
