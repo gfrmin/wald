@@ -29,3 +29,18 @@ ZERO_EVIDENCE = "ZERO_EVIDENCE"    # S5: `closed`, or a bottom state with full s
 SHARED_SOURCE = "SHARED_SOURCE"    # S2: a source read twice is a declared component of Omega
 TABLE_SOURCE = "TABLE_SOURCE"      # S3: every table names its source
 TABLE_SHAPE = "TABLE_SHAPE"        # section 1: a table is total over Omega, and B_k holds the endings
+
+# Of the surface (SURFACE section 5). A pack that breaks one rule is refused by that rule's name;
+# one that breaks several, by any one of theirs -- no order is promised (SURFACE K7).
+SYNTAX = "SYNTAX"                        # not Python's syntax at all
+NOT_A_DECLARATION = "NOT_A_DECLARATION"  # a form the grammar of SURFACE section 1 does not have
+DUPLICATE = "DUPLICATE"                  # said twice: a declaration, a key, a name, a state
+BAD_NAME = "BAD_NAME"                    # a parameter name a cell cannot read
+UNKNOWN_NAME = "UNKNOWN_NAME"            # a name no declaration gave a meaning
+FLOAT = "FLOAT"                          # a decimal, where only exact rationals are meant
+DIVISION_BY_ZERO = "DIVISION_BY_ZERO"    # in a cell
+UNHOUSED_NUMERAL = "UNHOUSED_NUMERAL"    # a numeral outside the six tables (S3, SURFACE K3)
+DATA_HASH = "DATA_HASH"                  # the data file is not the one the pack pinned
+UNDECLARED_READ = "UNDECLARED_READ"      # a kernel names or depends on what its act does not read
+MISSING = "MISSING"                      # a declaration a pack must make and did not
+UNREAD_PARAMETER = "UNREAD_PARAMETER"    # a declared parameter nobody reads (S3)

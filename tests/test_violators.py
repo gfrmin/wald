@@ -61,14 +61,14 @@ class S2IndependentEvidence(unittest.TestCase):
     def test_two_acts_reading_one_source_are_refused(self):
         s = appendix(N=2, d=1)
         s["O"]["re-reading"] = act(APPX_K, F(1, 2))
-        s["table_sources"]["kernels"]["re-reading"] = "data"
+        s["table_sources"]["kernels"]["re-reading"] = ["data"]
         s["sources"] = {"test": ["the_draw"], "re-reading": ["the_draw"]}
         self.assertEqual(refusal(s), "SHARED_SOURCE")
 
     def test_the_same_pack_with_the_draw_in_omega_is_accepted(self):
         s = appendix(N=2, d=1)
         s["O"]["re-reading"] = act(APPX_K, F(1, 2))
-        s["table_sources"]["kernels"]["re-reading"] = "data"
+        s["table_sources"]["kernels"]["re-reading"] = ["data"]
         s["sources"] = {"test": ["the_draw"], "re-reading": ["the_draw"]}
         s["components"] = ["the_draw"]
         self.assertEqual(refusal(s), "ACCEPTED")
@@ -84,7 +84,7 @@ class S2IndependentEvidence(unittest.TestCase):
     def test_identical_kernels_are_not_a_shared_source(self):
         s = appendix(N=2, d=1)
         s["O"]["copy"] = act(APPX_K, F(1, 2))
-        s["table_sources"]["kernels"]["copy"] = "data"
+        s["table_sources"]["kernels"]["copy"] = ["data"]
         self.assertEqual(refusal(s), "ACCEPTED")
 
 
@@ -187,11 +187,11 @@ class Section1Nouns(unittest.TestCase):
         self.assertEqual(refusal(amended(O={"test": act(APPX_K, F(-1, 2))})), "PRICE")
 
     def test_every_table_names_its_source(self):
-        self.assertEqual(refusal(amended(table_sources={"kernels": {"test": "data"}})), "TABLE_SOURCE")
+        self.assertEqual(refusal(amended(table_sources={"kernels": {"test": ["data"]}})), "TABLE_SOURCE")
 
     def test_a_source_outside_data_elicited_fitted_is_refused(self):
         s = amended()
-        s["table_sources"]["kernels"]["test"] = "guessed"
+        s["table_sources"]["kernels"]["test"] = ["guessed"]
         self.assertEqual(refusal(s), "TABLE_SOURCE")
 
     def test_a_belief_cannot_be_made_or_changed_from_outside(self):

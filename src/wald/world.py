@@ -120,8 +120,12 @@ def declare(spec):
             raise Refused(TABLE_SOURCE, "the " + table + " table names no source in " + str(TAGS))
     kernel_sources = table_sources.get("kernels", {})
     for name in acts:
-        if kernel_sources.get(name, None) not in TAGS:
-            raise Refused(TABLE_SOURCE, "the kernel of " + repr(name) + " names no source in " + str(TAGS))
+        tags = kernel_sources.get(name, None)
+        # A kernel draws on every table inside it, so it names a list of sources -- empty when it
+        # holds no number at all, as `point` does.
+        if not isinstance(tags, (list, tuple)) or any(tag not in TAGS for tag in tags):
+            raise Refused(TABLE_SOURCE, "the kernel of " + repr(name)
+                          + " names no list of sources in " + str(TAGS))
 
     components = frozenset(spec.get("components", ()))
     read_by = {}

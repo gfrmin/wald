@@ -17,7 +17,7 @@ _TAGS = {"prior": "data", "utility": "data", "price": "data", "horizon": "data",
 def _world(spec):
     return declare({"prior": spec["prior"], "T": spec["T"], "O": spec["O"],
                     "N": 1, "d": 1, "closed": True,
-                    "table_sources": dict(_TAGS, kernels={k: "data" for k in spec["O"]})})
+                    "table_sources": dict(_TAGS, kernels={k: ["data"] for k in spec["O"]})})
 
 
 class _Agent:
