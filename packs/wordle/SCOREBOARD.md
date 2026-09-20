@@ -1,40 +1,27 @@
 # Wordle — scoreboard
 
-`packs/wordle/pack.py`, played by `wald.episode.run` through a door that answers with the
-game's feedback. Every act is the kernel's own: the depth below is what the pack declares,
-and the kernel plays `decide_min(d, n)` (CHARTER E3).
+`packs/wordle/pack.py`, played by `wald.episode.run` through a door that answers
+with the game's feedback. Every act is the kernel's own: the depth below is what the pack
+declares, and the kernel plays `decide_min(d, n)` (CHARTER E3).
 
-| | |
+|  | **depth 1** |
 |---|---|
 | words (states) | 40 |
-| horizon | 5 (five guesses and a claim: Wordle's six attempts) |
+| horizon | 5 |
 | **declared depth** | **1** |
 | answers played | 40 |
 | solved | 40 / 40 |
-| mean attempts | 2.250 |
+| **mean attempts** | **2.250** |
 | worst | 3 |
-| time | 89.2 s for 40 episodes (2.23 s each) |
-
-## Attempts
-
-An attempt is an act the agent played: each guess, and the claim it ends on.
-
-| attempts | answers | |
-|---|---|---|
-| 1 | 1 | # |
-| 2 | 28 | ############################ |
-| 3 | 11 | ########### |
-
-## Failures
-
-None: every answer was claimed right, or guessed all-green, within the horizon.
+| first episode | 0.0 s |
+| all answers | 0.1 s |
 
 ## Quantities by source
 
 `wald.surface.census`, which counts quantities, not numerals: each cell, parameter,
 mixture weight, price, the horizon and the depth once, however it is written.
 
-| source | quantities |
+| source | depth 1 |
 |---|---|
 | data | 1681 |
 | elicited | 3202 |
@@ -45,7 +32,19 @@ mixture weight, price, the horizon and the depth once, however it is written.
 horizon and every kernel row are `data` — facts of the game and of the word list. What is
 `elicited` is the owner's: the depth, and the utilities, including `loss`.
 
-## Every answer
+## Depth 1 — `packs/wordle/pack.py`
+
+An attempt is an act the agent played: each guess, and the claim it ends on.
+
+| attempts | answers |  |
+|---|---|---|
+| 1 | 1 | # |
+| 2 | 28 | ######################################## |
+| 3 | 11 | ################ |
+
+Failures: none — every answer was claimed right, or guessed all-green, within the horizon.
+
+<details><summary>every answer</summary>
 
 | answer | attempts | acts |
 |---|---|---|
@@ -89,3 +88,5 @@ horizon and every kernel row are `data` — facts of the game and of the word li
 | black | 3 | their → would → claim black |
 | check | 2 | their → claim check |
 | index | 3 | their → video → claim index |
+
+</details>

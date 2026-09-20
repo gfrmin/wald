@@ -9,7 +9,7 @@ from .refusals import KERNEL_ROW
 class Kernel:
     """A row per state. `at` reads a mass; an outcome absent from a row has mass zero."""
 
-    __slots__ = ("_rows", "_outcomes")
+    __slots__ = ("_rows", "_outcomes", "_plain")
 
     def __init__(self, rows, refusal=KERNEL_ROW):
         r = {}
@@ -22,6 +22,7 @@ class Kernel:
                     outcomes.append(o)
         self._rows = r
         self._outcomes = tuple(outcomes)
+        self._plain = {state: dict(row.items()) for state, row in r.items()}
 
     def __setattr__(self, name, value):
         if name in self.__slots__ and not hasattr(self, name):
@@ -33,6 +34,12 @@ class Kernel:
 
     def row(self, state):
         return self._rows[state]
+
+    def rows(self):
+        """Every row at once, as plain mappings outcome -> mass. The rows themselves are Dists
+        and stay Dists: this is the same numbers without a lookup and a method call per state,
+        for the one loop (`belief._split`) that walks all of them."""
+        return self._plain
 
     def states(self):
         return tuple(self._rows)

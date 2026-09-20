@@ -4,6 +4,7 @@ from fractions import Fraction
 
 from .dist import Dist
 from .kernels import Kernel
+from .same import Sameness
 from .refusals import (DEPTH, EMPTY_T, KERNEL_ROW, PRICE, PRIOR, SHARED_SOURCE, TABLE_SHAPE,
                        TABLE_SOURCE, ZERO_EVIDENCE, Refused)
 
@@ -28,9 +29,11 @@ class Act:
 class World:
     """The declaration: Omega through its Prior, the menu M as T then O, and the clock."""
 
-    __slots__ = ("prior", "T", "O", "N", "d", "closed", "bottom", "table_sources", "components")
+    __slots__ = ("prior", "T", "O", "N", "d", "closed", "bottom", "table_sources", "components",
+                 "_work")
 
     def __init__(self, prior, T, O, N, d, closed, bottom, table_sources, components):
+        self._work = None
         self.prior = prior
         self.T = T
         self.O = O
@@ -43,6 +46,14 @@ class World:
 
     def omega(self):
         return tuple(self.prior.carrier())
+
+    def work(self):
+        """What the lookahead may work out once and keep: which acts are copies of which, and
+        the values already found. Both are facts about a World, and a World does not change once
+        it is declared, so they are built on its first decision and then belong to it."""
+        if self._work is None:
+            self._work = (Sameness(self), {})
+        return self._work
 
     def menu(self, used):
         """M without the `once` acts already executed. T is not here: it never leaves."""
