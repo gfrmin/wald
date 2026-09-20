@@ -28,3 +28,4 @@ DEPTH = "DEPTH"                    # E3: 1 <= d <= N
 ZERO_EVIDENCE = "ZERO_EVIDENCE"    # S5: `closed`, or a bottom state with full support
 SHARED_SOURCE = "SHARED_SOURCE"    # S2: a source read twice is a declared component of Omega
 TABLE_SOURCE = "TABLE_SOURCE"      # S3: every table names its source
+TABLE_SHAPE = "TABLE_SHAPE"        # section 1: a table is total over Omega, and B_k holds the endings

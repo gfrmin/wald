@@ -27,15 +27,22 @@ whole of what `src/wald` may import.
 - **The floor.** `episode.run`, as `min(world.d, n)`. `decide` is always exactly decide_n: an
   evaluator is compared with the reference *at the same d* (E3), so the depth is never baked into it.
 
-## Two notes on what is here that the page did not name
+## The refusals, and one reading that had to be chosen
 
-- `refusals.PRICE`. §1 declares `price : O → ℚ≥0` and `laws/INTERFACE.md` fixes seven refusal names,
-  none of them for a negative price. A rule that forbids nothing says nothing (`violators.md`), so
-  the clause is enforced under an eighth name rather than left unsaid. Nothing in the kit declares a
-  negative price, so this neither passes nor fails anything there; brief 002 may rename it.
-- S2's second clause is enforced: a `fresh` act that names a source not declared in `components` is
-  `SHARED_SOURCE`, because its two executions read that source twice. The default — no `sources` key,
-  a private source per act, a new one per execution of a `fresh` act — is never refused.
+`declare` refuses a pack by the name of the clause it breaks: `EMPTY_T`, `PRIOR`, `KERNEL_ROW`,
+`PRICE`, `DEPTH`, `ZERO_EVIDENCE`, `TABLE_SOURCE`, `TABLE_SHAPE`, `SHARED_SOURCE`. (`PRICE` and the
+`fresh` half of `SHARED_SOURCE` were this kernel's readings under kit v0.1; kit v0.2 adopted both.)
+
+`TABLE_SHAPE` says a table over Ω is a function on Ω — defined at every state and at no other — and
+that an ending outcome is an outcome of its own act. Four packs are refused by it: a terminal
+utility, a kernel or a u_end that is not total over Ω, and an ending outcome the kernel cannot emit.
+
+**"Cannot emit" is "not in B_k", not "has no mass".** An outcome declared in the kernel's rows with
+mass zero in every one of them is in B_k: the pack has said what it is worth, the sums of §2 skip it
+(`Σ_o` runs over outcomes of positive mass), and no belief can ever reach it — but the declaration is
+lawful, and S5 is what speaks when such an outcome is nonetheless observed. The stricter reading
+would refuse lawful packs, including ones the kit itself draws, now that its generator builds kernel
+rows from 0, 1, 2, 5 and 12. `tests/test_violators.py` keeps both halves of this.
 
 ## Not here (brief 001's `Not in this brief`, and INTERFACE's deferrals)
 
