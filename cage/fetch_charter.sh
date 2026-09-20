@@ -10,4 +10,5 @@ grep -q 'Good "git" signature for author@wald' ../.tagcheck || { echo "tag $TAG 
 [ "$(git rev-list -n1 "$TAG")" = "$SHA" ] || { echo "tag $TAG does not point at the locked commit"; exit 1; }
 git checkout -q "$SHA"
 git diff --quiet charter-v0 -- CHARTER.md || { echo "CHARTER.md differs from the signed page charter-v0"; exit 1; }
+git diff --quiet surface-v0 -- SURFACE.md || { echo "SURFACE.md differs from the signed page surface-v0"; exit 1; }
 echo "charter ok: $TAG at $SHA, signed by author@wald, page unchanged since charter-v0"
