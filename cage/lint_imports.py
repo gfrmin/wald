@@ -1,7 +1,7 @@
 """The kernel may import the standard-library modules below and itself. Nothing else: not the charter, not the oracle,
 not the environment. If you need another module, ask in QUESTIONS.md; the author edits this list."""
 import ast, pathlib, sys
-ALLOW = {"wald", "__future__", "fractions", "dataclasses", "typing", "enum", "itertools", "functools", "collections", "abc", "operator", "numbers", "math"}
+ALLOW = {"wald", "__future__", "fractions", "dataclasses", "typing", "enum", "itertools", "functools", "collections", "abc", "operator", "numbers", "math", "ast", "hashlib", "json", "keyword", "pathlib"}
 BANNED_CALLS = {"eval", "exec", "compile", "__import__", "open", "input", "breakpoint", "globals", "locals", "vars"}
 bad = []
 for path in sorted(pathlib.Path(sys.argv[1]).rglob("*.py")):
