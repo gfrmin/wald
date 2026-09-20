@@ -4,8 +4,8 @@ from fractions import Fraction
 
 from .dist import Dist
 from .kernels import Kernel
-from .refusals import (DEPTH, EMPTY_T, KERNEL_ROW, PRICE, PRIOR, SHARED_SOURCE, TABLE_SOURCE,
-                       ZERO_EVIDENCE, Refused)
+from .refusals import (DEPTH, EMPTY_T, KERNEL_ROW, PRICE, PRIOR, SHARED_SOURCE, TABLE_SHAPE,
+                       TABLE_SOURCE, ZERO_EVIDENCE, Refused)
 
 TAGS = ("data", "elicited", "fitted")
 TABLES = ("prior", "utility", "price", "horizon", "depth")
@@ -49,6 +49,18 @@ class World:
         return [name for name, act in self.O.items() if not (act.once and name in used)]
 
 
+def _total(table, omega, what):
+    """A table over Omega is a function on Omega: defined at every state, and at nothing else.
+    A gap is a state the pack forgot; a stranger is a state that is not in the small world."""
+    missing = [state for state in omega if state not in table]
+    strangers = [state for state in table if state not in omega]
+    if missing:
+        raise Refused(TABLE_SHAPE, what + " says nothing at " + ", ".join(repr(s) for s in missing))
+    if strangers:
+        raise Refused(TABLE_SHAPE, what + " speaks of " + ", ".join(repr(s) for s in strangers)
+                      + ", which is not in Omega")
+
+
 def declare(spec):
     """Accept a pack, or refuse it by the name of the clause it breaks."""
     T = spec["T"]
@@ -64,13 +76,22 @@ def declare(spec):
     prior = Dist(prior_spec, PRIOR)
     omega = prior.carrier()
 
+    for t_name, u in T.items():
+        _total(u, omega, "the utility of terminal act " + repr(t_name))
+
     acts = {}
     declared_sources = spec.get("sources", {})
     for name, s in spec["O"].items():
         kernel = Kernel(s["K"], KERNEL_ROW)
+        _total(kernel.states(), omega, "the kernel of " + repr(name))
         price = Fraction(s["price"])
         if price < 0:
             raise Refused(PRICE, "act " + repr(name) + " is paid to be looked at")
+        for o, u_end in s["ends"].items():
+            if o not in kernel.outcomes():
+                raise Refused(TABLE_SHAPE, "the ending outcome " + repr(o) + " is not in B_k, so the kernel"
+                              + " of " + repr(name) + " cannot emit it")
+            _total(u_end, omega, "the u_end of " + repr(o) + " of " + repr(name))
         sources = tuple(declared_sources.get(name, ()))
         acts[name] = Act(name, kernel, price, bool(s["once"]), dict(s["ends"]), sources)
 

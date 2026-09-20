@@ -125,6 +125,43 @@ class S5ZeroEvidence(unittest.TestCase):
         self.assertEqual(refusal(s), "ZERO_EVIDENCE")
 
 
+class Section1TableShape(unittest.TestCase):
+    """A table over Omega is a function on Omega, and an ending outcome is an outcome of its act.
+    Each of these is a pack that would run and would mean nothing where the table is silent."""
+
+    def test_a_utility_that_is_not_total_over_omega(self):
+        self.assertEqual(refusal(amended(T={"treat": {"sick": F(0)}, "leave": {"sick": F(-10), "well": F(0)}})),
+                         "TABLE_SHAPE")
+
+    def test_a_utility_that_names_a_state_outside_omega(self):
+        s = amended()
+        s["T"] = {"treat": {"sick": F(0), "well": F(-2), "undead": F(-1)}, "leave": s["T"]["leave"]}
+        self.assertEqual(refusal(s), "TABLE_SHAPE")
+
+    def test_a_kernel_that_is_not_total_over_omega(self):
+        self.assertEqual(refusal(amended(O={"test": act({"sick": APPX_K["sick"]}, F(1, 2))})), "TABLE_SHAPE")
+
+    def test_an_ending_outcome_the_kernel_cannot_emit(self):
+        ends = {"boom": {"sick": F(0), "well": F(0)}}
+        self.assertEqual(refusal(amended(O={"test": act(APPX_K, F(1, 2), True, ends)})), "TABLE_SHAPE")
+
+    def test_a_u_end_that_is_not_total_over_omega(self):
+        self.assertEqual(refusal(amended(O={"test": act(APPX_K, F(1, 2), True, {"+": {"sick": F(0)}})})),
+                         "TABLE_SHAPE")
+
+    def test_an_ending_outcome_in_B_k_with_no_mass_anywhere_is_accepted(self):
+        """`cannot emit` is `not in B_k`, not `has no mass`. A declared outcome of zero mass in
+        every state is in B_k: the pack has said what it is worth should the World turn out to
+        allow it, and the sums of section 2 skip it. The kit's own generator draws such worlds
+        (its rows are built from 0, 1, 2, 5 and 12), so refusing them would refuse a lawful pack."""
+        K = {"sick": {"+": F(1), "-": F(0)}, "well": {"+": F(1), "-": F(0)}}
+        s = amended(O={"test": act(K, F(1, 2), True, {"-": {"sick": F(1), "well": F(1)}})})
+        self.assertEqual(refusal(s), "ACCEPTED")
+
+    def test_the_appendix_tables_are_total(self):
+        self.assertEqual(refusal(amended()), "ACCEPTED")
+
+
 class E3TheFloor(unittest.TestCase):
     "depth: 0 -- never looks; every one-sided consequence passes."
 
