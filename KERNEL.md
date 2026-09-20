@@ -21,6 +21,8 @@ whole of what `src/wald` may import.
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
 | `wald/surface.py` | SURFACE §1, §2 and §4: the nine declarations and the seven kernel forms, parsed with `ast` and never executed, elaborated to a World spec |
 | `tools/wald_check.py` | outside `src/`: `python3 tools/wald_check.py pack.py` — the write, check, repair loop for every pack author |
+| `tools/make_wordle_pack.py` | outside `src/`: writes `packs/wordle/pack.py` from the charter's word list, the game's feedback rule included |
+| `tools/play_wordle.py` | outside `src/`: plays every answer through `wald.episode.run` behind a door that is the game, and writes the scoreboard |
 
 ## The three things that exist exactly once
 
@@ -60,7 +62,29 @@ cell, a mixture weight, a price, the horizon or the depth, or once as a `param` 
 cannot choose, compare a probability or update a belief because the grammar has no form for any of
 them (E5, S1) — there is nowhere in a pack to put one.
 
+## The first pack, and what it costs
+
+`packs/wordle/pack.py` is Wordle on forty words: 1,270 lines, 4,883 quantities, nothing `fitted`.
+It is generated and committed, so every number in the World is in the repository.
+
+Its terminal acts are claims — `claim <word>`, −1 if right and `loss` if wrong — because a World
+whose only terminal act is "give up" is **degenerate at depth 1**, and that is a fact about the
+declared World rather than something to fix in code. One look ahead values the frontier at V₀, so
+with m candidates, a loss L and c non-green feedback classes,
+
+    Q_1 − V_0 = [ |L| + (|L| − 1)(c − 1) − m ] / m
+
+which is negative for every guess when the only terminal value is a constant. `tests/test_wordle.py`
+keeps that as a test: with "give up" alone the kernel gives up at once, and the oracle agrees.
+`loss = −7` because five guesses and a claim cost 6, so a wrong claim is one worse than playing the
+game out honestly — the only `elicited` opinion in the pack besides the depth.
+
+**Measured, with no fast path (E2 is brief 004's):** `check` and `declare` together take under a
+tenth of a second; `decide` at the root takes about 2 s, being V₀ over 40 claims inside Q₁ over 40
+guesses — roughly 1.3 M exact-rational operations. An episode is 2–3 acts and about 2.2 s; all forty
+answers about 90 s. The work per `decide` barely falls as the game is won, because a belief keeps all
+forty states, zeros included, exactly as the reference does.
+
 ## Not here
 
-Domain packs (brief 003 is Wordle). No `host` form — withdrawn by SURFACE K4. No fast path (E2), no
-floats, no learning.
+No `host` form — withdrawn by SURFACE K4. No fast path (E2), no floats, no learning.
