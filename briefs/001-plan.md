@@ -7,102 +7,100 @@ Everything below is either a citation of the page or a decision forced by one; w
 mine and not the page's, it is marked **[mine]** and confined to `kit_adapter.py` or to what the kit
 cannot observe.
 
-## 0. Blocker for the author (not an ambiguity in the page)
+## 0. The lock (resolved)
 
-`sh cage/fetch_charter.sh` fails as committed:
-
-    tag kit-v0 does not point at the locked commit
-
-because `cage/charter.lock` reads `SHA=PASTE_SHA_HERE`. `cage/` is mine not to touch (CLAUDE.md), so
-I cannot fix it and CI will fail this branch at step one until the author does. Observed, for the
-author's convenience: the tag `kit-v0` **is** signed by `author@wald`
-(`Good "git" signature for author@wald`, ED25519 `SHA256:/hX9kxdf+khb2AenKoaXi0FWxvG9M748etPA8D/1WeQ`)
-and points at `458e6e8656f8ed02429c5d21800b522e9a36f0de`; at that commit
-`git diff --quiet charter-v0 -- CHARTER.md` is clean, so the page is unchanged since `charter-v0`.
-The clone the failed script leaves behind sits on exactly that commit, so I have read and will build
-against the signed page. `python3 charter/laws/spec_check.py` prints **PAGE PASSES** here.
-
-This is not a `QUESTIONS.md` entry: it is a broken lock file, not an ambiguity in the page. I have no
-`QUESTIONS.md` entry to file from this reading — see §7.
+Superseded. The author fixed `cage/charter.lock`; `sh cage/fetch_charter.sh` now prints
+`charter ok: kit-v0.1 at 38285fcb430aaf8ab8698cf30c1ee092bbc79823, signed by author@wald, page unchanged since charter-v0`.
+`kit-v0.1` adds `laws/kit_structural.py` and the INTERFACE section revised into this plan below;
+`CHARTER.md` itself is byte-identical to `charter-v0`, so nothing in §4-§7 of this plan moves.
 
 ## 1. What the judge actually calls
 
-`kit.py` reaches the kernel through one door only: `wald.kit_adapter.make_agent()`, returning an
-object with four methods (INTERFACE.md). Everything else in `src/wald` is unobserved by the kit and
-exists because the page and the brief require it.
+Two judges now. `kit.py` reaches the kernel through `wald.kit_adapter.make_agent()`'s four methods;
+`kit_structural.py` (kit v0.1) judges **the real API**, whose names and signatures INTERFACE.md fixes
+under "The structural surface". So "everything else in `src/wald` is the builder's" is now false in
+the places that section names, and my earlier guesses at those names are replaced by its list.
+
+The four-method surface (`kit.py`):
 
 | the kit calls | passes | must get back |
 |---|---|---|
 | `push(b, K)` | `b = {state: Fraction}`, `K = {state: {outcome: Fraction}}` | `{outcome: Fraction}`, summing to 1 (C1) |
 | `condition(b, K, o)` | as above, `o` a raw outcome value | `{state: Fraction}`; raises a class **named** `WorldFalsified` when `P_b(o|k) = 0` |
 | `expect(b, f)` | `f = {state: Fraction}` | `Fraction` |
-| `decide(b, world, n, used)` | `world` a plain dict, `n` an int ≥ 0, `used` a frozenset | the act **key**, i.e. the same string the world dict is keyed by |
+| `decide(b, world, n, used)` | `world` a plain dict, `n` an int >= 0, `used` a frozenset | the act **key**, the same string the world dict is keyed by |
 
-Consequences I must design around, each read off `kit.py` / `spec_check.py`:
+The real surface (`kit_structural.py`), which the adapter is a shim over:
 
-- **Plain dicts cross the boundary in both directions.** `C2` compares two `condition` results with
-  `==`; `C1` sums `push(...).values()`; `C6` feeds a `condition` result straight back into `expect`.
-  So the adapter converts `Belief → {state: Fraction}` on the way out. The seal (brief 1) therefore
-  cannot be "no code can see the weights"; it is "no code **outside the kernel package** can, and the
-  only way in is `condition`". Implementation: `Belief` is frozen with `__slots__`, constructible
-  only with a module-private token, and the weights are reachable only through a package-private
-  accessor that `push`/`expect`/`decide`/`report`/the adapter use. Any other module importing it is a
-  bug I can see in review; `wald.__init__` does not export it.
-- **The kit's outcome values are not minted tokens.** `same_acts`, `policy_value`, `C1` and `C7` call
-  `condition` with the same raw outcome many times over. So the Obs discipline of §1 ("minted only by
-  the door", consumed exactly once) lives in the door and the episode loop, **not** in `condition`'s
-  signature at the adapter boundary. `condition` takes an `Obs`; the adapter mints one per call from a
-  test door and spends it immediately. **[mine]**, and it is conversion, not choice: the adapter still
-  computes nothing.
-- **`decide` is `decide_n`, never the floor.** `E2`/`same_acts` compares against
-  `REF.decide(b, world, n, used)`, the exact §2 recursion; INTERFACE.md says the kit passes
-  `n = min(d, n)` itself when it tests a floor. So `min(d, n)` belongs in the episode loop (brief 5),
-  and `decide` must not apply it. Getting this backwards is the poison
-  `Rolling(1, "ignores the declared depth")`.
-- **The kit's World dict declares no Horizon, no Depth, no `closed`/⊥, no sources.** The adapter must
-  supply them to build a `World` that validates. **[mine]**, all three unobservable to the kit:
-  `closed = True` (forced in substance: the `S5` check requires `condition` on a zero-mass outcome to
-  raise, which is closed-world behaviour); `N = d = 1`, a pair that satisfies `1 ≤ d ≤ N` — the
-  horizon must **not** be derived from the `n` of a call, since the kit calls `decide(..., n=0)`
-  (`C5`, `C8`) and `N = 0` would refuse a world the kit expects an answer for; each observational act
-  reads its own private source, so no source is shared and S2 has nothing to refuse. That last one is
-  load-bearing: `tie_variants` hands me `k0_copy`, a duplicate of `k0` with an identical kernel, and a
-  validator that read "identical kernel ⇒ shared source" would refuse a world the kit requires me to
-  answer. Identical kernels are not a shared source; a shared *declared* source is (S2).
+- `wald.__all__` subset of `{declare, run, Door, report, Display, refusals}`. `push`, `condition`,
+  `expect` and `decide` are **not** exported: a host or pack never holds a probability (S1, E5).
+- `wald.world.declare(spec) -> World`, where `spec` is the kit's World dict **plus** `N`, `d`, either
+  `closed: True` or `bottom: <state>`, `table_sources`, and optionally `sources` / `components`.
+- `wald.belief`: `Belief` (unconstructible, no public attributes, immutable), `prior(world)`,
+  `condition(belief, world, obs)`, `expect(belief, f)`, `report(belief) -> Display`.
+- `wald.obs.Obs` unconstructible, single-use; `wald.display.Display` unconstructible and inert;
+  `wald.episode.Door` with `observe` as the only mint; `wald.episode.run(world, door) -> result`
+  carrying `acts`, `outcomes`, `status`, `paid`, `final`.
+
+Four things this settles, three of which my first draft had to guess at:
+
+- **Plain dicts still cross the four-method boundary in both directions** (`C2` compares `condition`
+  results with `==`). So the seal is "nothing outside the package sees the weights", and ST2 tightens
+  it: `dir(belief)` must be **empty of public names** — not one public method, not one attribute.
+  Implementation: `__slots__`, a private construction seal, `__setattr__` that refuses, and a
+  package-private `_weights` accessor that `push`/`expect`/`decide`/`report`/the adapter use.
+- **The Obs discipline lives on the real `condition(belief, world, obs)`, not on the adapter's.** The
+  kit conditions on the same raw outcome many times over (`same_acts`, `C1`, `C7`), so the adapter
+  needs a lower-level path. One update, two entry points: the public verb spends a token, the
+  package-private `_update(belief, kernel, value)` is the arithmetic of §2 and exists once.
+  ST5 confirms the order: check-spent first (`ObsSpent`), compute, and mark spent **only on success** —
+  the page says every Obs *that does not falsify the World* is consumed by exactly one `condition`, so
+  a falsifying token is never consumed.
+- **`decide` is `decide_n`, never the floor.** `min(d, n)` lives in `run`, which ST6 tests directly
+  (the H world: `N=2, d=1`, two blank peeks then X). Confirmed, not guessed.
+- **The adapter still supplies what the kit's four-method World dict does not declare** — `N = d = 1`
+  (a pair satisfying `1 <= d <= N`; the horizon must *not* come from a call's `n`, since the kit calls
+  `decide(..., n=0)`), `closed: True`, and no `sources` key, i.e. the default private source per act.
+  **[mine]**, and unobservable to `kit.py`. The source default is load-bearing and is now confirmed by
+  ST4: `twin` declares two acts with *identical kernels* and private sources and must be **accepted**.
+  "Identical kernels are not a shared source" is INTERFACE's own sentence.
 
 ## 2. Modules (one line each, as they will read in `KERNEL.md`)
 
+The fixed names land one per module, so the module list is unchanged from the first draft:
+
 | module | why it exists |
 |---|---|
-| `wald/refusals.py` | the named refusals of §1/S4/S5/E3 and `WorldFalsified`; refusing by name is required by brief 2 and the class name is read by the kit |
-| `wald/dist.py` | a finite distribution over ℚ that cannot exist unless its mass sums to 1 — the one place row sums are enforced (S4) |
+| `wald/refusals.py` | `Refused` (with `name`), `WorldFalsified`, `ObsSpent`, and the seven refusal names; refusing by name is required and the class names are read by the kit |
+| `wald/dist.py` | a finite distribution over Q that cannot exist unless its mass sums to one — the one place row sums are enforced (S4) |
 | `wald/kernels.py` | `Kernel` plus the five combinators of S4 (point, table, mixture, product, composition), each preserving row sums by construction |
-| `wald/world.py` | the World and its declared tables with their `data`/`elicited`/`fitted` source tag (§1, S3), and all declaration-time validation (brief 2) |
-| `wald/obs.py` | the `Obs` token: minted only by a door, consumed exactly once, a second use raises (§1, S2) |
-| `wald/display.py` | `Display`: a rendered value with no comparison, no arithmetic, no `float()` (S1) |
-| `wald/belief.py` | the sealed `Belief` and the three verbs that may touch its weights: `push`, `condition`, `expect` (§2), plus `report` (S1) |
-| `wald/decide.py` | the one `decide` — V₀, Qₙ, Vₙ, `decide_n` — existing exactly once (E5) |
-| `wald/episode.py` | the episode loop of §2 in the page's order, the `Door` interface the host implements, and a simulated door for tests |
+| `wald/world.py` | `declare(spec) -> World`: the declared tables with their `data`/`elicited`/`fitted` tags, and every validation that refuses by name |
+| `wald/obs.py` | the `Obs` token: minted only by a door, consumed exactly once, a second use raises `ObsSpent` (§1, S2) |
+| `wald/display.py` | `Display`: renders, and raises `TypeError` on every comparison, operator, `float`, `int`, `bool`, `hash`, `iter`, `len` and index (S1) |
+| `wald/belief.py` | the sealed `Belief` and the verbs that may touch its weights: `prior`, `push`, `condition`, `expect` (§2), plus `report` (S1) |
+| `wald/decide.py` | the one `decide` — V_0, Q_n, V_n, decide_n — existing exactly once (E5) |
+| `wald/episode.py` | `Door` and `run`: the loop of §2 in the page's order, with `min(d, n)` (E3) |
 | `wald/kit_adapter.py` | the INTERFACE.md shim: dicts in, kernel types out, no logic of its own |
-
-Ten modules. If any one of them ends the brief without a sentence of its own in `KERNEL.md`, it
-should not exist.
 
 ## 3. Order of work
 
 1. `refusals`, `dist`, `kernels` — S4 first, because every table in every later test needs it.
-2. `world` + validation (brief 2). Refuse by name, one named refusal per clause: empty T; prior not
-   strictly positive or not summing to 1; kernel row ≠ 1; `d` outside `1..N`; neither `closed` nor a
-   ⊥ with full support over every act's every outcome (S5); a source read by two acts that is not a
-   declared component of Ω (S2); an undeclared parameter, and a declared parameter read by nothing
-   (S3, both halves — `violators.md` S3 expects *two* refusals).
-3. `obs`, `display`, `belief`. `push`/`condition`/`expect` are three lines each from §2; the work is
-   the seal and the single-use token.
-4. `decide` (E5). Written straight from the §2 box, then checked against the appendix by hand:
-   `E[treat] = −8/5`, `P(+) = 17/50`, `Q₁(test) = −51/50 > −8/5`, `decide₁ = test`.
-5. `kit_adapter`, then the kit. Run `--seed 1 --worlds 100`, then other seeds of my own choosing, plus
+2. `world.declare` and its refusals, one per clause: `EMPTY_T`; `PRIOR` (not strictly positive, or not
+   summing to 1); `KERNEL_ROW`; `DEPTH` (`d` outside `1..N`); `PRICE` (§1 says
+   `price : O -> Q>=0`; INTERFACE's seven names have none for it, and a rule that forbids nothing
+   says nothing, so it is enforced under an eighth name); `ZERO_EVIDENCE` (neither `closed` nor a
+   `bottom` whose kernel rows are strictly positive everywhere); `TABLE_SOURCE` (a table that names no
+   source, or a tag outside `data | elicited | fitted`); `SHARED_SOURCE` (two acts naming one source
+   that is not in `components` — and, per S2's second clause, a `fresh` act naming one, since its two
+   executions read it twice). **Unhoused numerals, unread parameters (S3) and refusing a pack that
+   chooses (E5) are deferred to brief 002**, where the surface syntax exists to carry them.
+3. `obs`, `display`, `belief`. The verbs are three lines each from §2; the work is the seal, the
+   single-use token and the inert Display.
+4. `decide` (E5), straight from the §2 box, then checked by hand against the appendix:
+   `E[treat] = -8/5`, `P(+) = 17/50`, `Q_1(test) = -51/50 > -8/5`, `decide_1 = test`.
+5. `episode.run` + `Door`, in the page's order (§4 below).
+6. `kit_adapter`, then the whole command: fetch, lint, kit at seed 1 and at seeds of my own, and at
    `--worlds 300`, since CI's seed is unseen and 100 worlds at one seed is not evidence.
-6. `episode` + the simulated door, in the page's order (§4 below).
 7. `KERNEL.md`, tests, PR.
 
 ## 4. The two places the page's exact wording decides the code
@@ -151,11 +149,12 @@ proof of failure.
 ## 6. My own tests (`tests/`, proving nothing — CLAUDE.md)
 
 - The appendix vector worked by hand, every intermediate number from the page's last section.
-- Every violator in `violators.md` as a case that must raise the named refusal: S1's display gate
-  (`Display` has no `__lt__`, no `__float__`), S2's three (token reused; two acts one source; five
-  copies of one attestation), S3's two (unhoused numeral; parameter read by nothing), S4's short row,
-  S5's two (`return prior`; `ε`-floor), E3's `depth: 0`, E5's pack that picks.
-- The episode loop against the simulated door: the order of §2, including a falsifying draw in a
+- Every violator in `violators.md` that brief 001 owns, as a case that must raise the named refusal:
+  S1's display gate (`Display` has no `__lt__`, no `__float__`), S2's shared source and its reused
+  token, S4's short row, S5's two (`return prior`; an `epsilon` floor), E3's `depth: 0`. S3's two
+  (unhoused numeral, unread parameter) and E5's pack that picks need the surface syntax and are
+  brief 002's.
+- The episode loop against a scripted door: the order of §2, including a falsifying draw in a
   `closed` world and an ending outcome, each landing on the right branch.
 - `decide` against `spec_check.Ref` on worlds I generate myself, with seeds unrelated to 1 — the same
   differential the kit runs, in my own harness, so I find failures before CI does.
