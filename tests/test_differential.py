@@ -119,7 +119,11 @@ class Differential(unittest.TestCase):
                 for o, po in S.REF.push(b, K).items():
                     if po == 0:
                         continue
-                    self.assertEqual(self.agent.condition(b, K, o), S.REF.condition(b, K, o))
+                    # The posterior does not carry the states the outcome ruled out: a zero-mass
+                    # state weighs nothing in any sum and no conditioning revives it (E2). What
+                    # both say about a state that is still alive has to agree exactly.
+                    mine, theirs = self.agent.condition(b, K, o), S.REF.condition(b, K, o)
+                    self.assertEqual(mine, {w: p for w, p in theirs.items() if p})
                 f = {w: F(1, 3) for w in b}
                 self.assertEqual(self.agent.expect(b, f), S.REF.expect(b, f))
 
