@@ -1,0 +1,35 @@
+# The definition of this workflow always comes from master (pull_request_target), never from the pull request.
+name: cage
+on:
+  pull_request_target:
+    branches: [master]
+  push:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  cage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: master (trusted scripts)
+        uses: actions/checkout@v4
+      - name: the work under judgement (data, not code we trust)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: pr
+          fetch-depth: 0
+      - name: protected paths untouched
+        if: github.event_name == 'pull_request_target'
+        run: |
+          cd pr
+          changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD -- .github cage CODEOWNERS)
+          if [ -n "$changed" ]; then echo "protected paths changed (only the author changes these, on master):"; echo "$changed"; exit 1; fi
+      - name: charter at the locked, author-signed commit
+        run: sh cage/fetch_charter.sh
+      - name: imports
+        run: python3 cage/lint_imports.py pr/src/wald
+      - name: kit
+        env:
+          KIT_SEED: ${{ secrets.KIT_SEED }}
+        run: python3 charter/laws/kit.py --impl pr/src --worlds 300
