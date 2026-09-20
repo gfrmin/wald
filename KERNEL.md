@@ -17,6 +17,10 @@ whole of what `src/wald` may import.
 | `wald/decide.py` | the one `decide`: V₀, Qₙ, Vₙ and the argmax exist here and nowhere else (E5) |
 | `wald/episode.py` | `Door` and `run`: the episode of §2 in the page's order, and the only place the floor `min(d, n)` is applied (E3) |
 | `wald/kit_adapter.py` | the `laws/INTERFACE.md` shim: plain dicts in, kernel types out, no logic of its own |
+| `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, and the census of quantities by source |
+| `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
+| `wald/surface.py` | SURFACE §1, §2 and §4: the nine declarations and the seven kernel forms, parsed with `ast` and never executed, elaborated to a World spec |
+| `tools/wald_check.py` | outside `src/`: `python3 tools/wald_check.py pack.py` — the write, check, repair loop for every pack author |
 
 ## The three things that exist exactly once
 
@@ -44,7 +48,19 @@ lawful, and S5 is what speaks when such an outcome is nonetheless observed. The 
 would refuse lawful packs, including ones the kit itself draws, now that its generator builds kernel
 rows from 0, 1, 2, 5 and 12. `tests/test_violators.py` keeps both halves of this.
 
-## Not here (brief 001's `Not in this brief`, and INTERFACE's deferrals)
+## A pack is read, never run
 
-Surface syntax and the pack checker, so: unhoused numerals and unread parameters (S3), and refusing a
-pack that chooses (E5), are brief 002's. No fast path (E2), no domain packs, no floats, no learning.
+`surface.py` parses with `ast` and walks the tree. Nothing in `src/wald` calls `eval`, `exec`,
+`compile` or `__import__` — the lint forbids all four, and `open` besides, so the one file the kernel
+reads goes through `pathlib` in `datafile.py`. A pack that says `import os` or `pathlib.Path(x).unlink()`
+is refused as the text it is; `tests/test_surface.py` checks that by leaving a file in place.
+
+The unhoused numerals and unread parameters of CHARTER S3 now have their home: a number lives in a
+cell, a mixture weight, a price, the horizon or the depth, or once as a `param` read by name. A pack
+cannot choose, compare a probability or update a belief because the grammar has no form for any of
+them (E5, S1) — there is nowhere in a pack to put one.
+
+## Not here
+
+Domain packs (brief 003 is Wordle). No `host` form — withdrawn by SURFACE K4. No fast path (E2), no
+floats, no learning.

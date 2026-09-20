@@ -12,7 +12,7 @@ def act(K, price, once=True, ends=None):
 
 def spec(prior, T, O, N=1, d=1, **kw):
     s = {"prior": prior, "T": T, "O": O, "N": N, "d": d, "closed": True,
-         "table_sources": dict(SRC, kernels={k: "data" for k in O})}
+         "table_sources": dict(SRC, kernels={k: ["data"] for k in O})}
     s.update(kw)
     return s
 
