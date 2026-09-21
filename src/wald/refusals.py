@@ -30,6 +30,14 @@ SHARED_SOURCE = "SHARED_SOURCE"    # S2: a source read twice is a declared compo
 TABLE_SOURCE = "TABLE_SOURCE"      # S3: every table names its source
 TABLE_SHAPE = "TABLE_SHAPE"        # section 1: a table is total over Omega, and B_k holds the endings
 
+# Of CHARTER v0.1, the think act. A World that declares no Depth+ is a v0 World and reads none of
+# these tables, so none of these names can speak to it.
+FRACTION = "FRACTION"              # section 1: 0 <= f <= 1, source `elicited` or `fitted` (S6)
+COST = "COST"                      # section 1: ops total over s = 1..|Omega| and >= 0; r >= 0 (S6)
+DEPTH_PLUS = "DEPTH_PLUS"          # J11: a World with theta declares d = 1, d+ = 2, N >= 2
+RATE = "RATE"                      # section 1: the Rate's source is `elicited`
+UNSCORED = "UNSCORED"              # S10: a `fitted` meta-table carries its Score (J18)
+
 # Of the surface (SURFACE section 5). A pack that breaks one rule is refused by that rule's name;
 # one that breaks several, by any one of theirs -- no order is promised (SURFACE K7).
 SYNTAX = "SYNTAX"                        # not Python's syntax at all

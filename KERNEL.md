@@ -1,6 +1,6 @@
 # KERNEL.md — every module, and its one reason to exist
 
-The kernel of CHARTER v0. Fifteen modules; if one of them cannot keep its line here, it should not
+The kernel of CHARTER v0 and of its amendment v0.1. Fifteen modules; if one of them cannot keep its line here, it should not
 exist. Standard library only, exact rationals only, and the list in `cage/lint_imports.py` is the
 whole of what `src/wald` may import.
 
@@ -10,13 +10,13 @@ whole of what `src/wald` may import.
 | `wald/refusals.py` | `Refused` carries the **name** of the clause that refused a pack, so a refusal says which rule spoke; `WorldFalsified` and `ObsSpent` are the two things the kernel refuses at run time (S5, S2) |
 | `wald/dist.py` | the one place mass is checked to sum to one, so a row that does not (S4) cannot come into existence anywhere else |
 | `wald/kernels.py` | `Kernel`, and the only five ways to build one — point, table, mixture, product, composition — each preserving row sums by construction (S4) |
-| `wald/world.py` | `declare`: the World of §1 with its tables and their `data`/`elicited`/`fitted` tags, and every validation that refuses a pack by name before anything runs |
+| `wald/world.py` | `declare`: the World of §1 with its tables and their `data`/`elicited`/`fitted` tags, and every validation that refuses a pack by name before anything runs — `build` is that without the rulings, for the kit's probes |
 | `wald/obs.py` | the Obs token, minted only by a door and consumed by exactly one `condition`; a token is not a record to be read twice (§1, S2) |
 | `wald/display.py` | `Display`: it renders and does nothing else, so a display value cannot reach control flow or a belief (S1) |
-| `wald/belief.py` | the sealed `Belief` and the verbs allowed to touch it — `prior`, `push`, `condition`, `expect`, `report`; the belief update of §2 is written once, here, and so is E2's unnormalised stand-in for the three of them |
-| `wald/decide.py` | the one `decide`: V₀, Qₙ, Vₙ and the argmax exist here and nowhere else (E5), with E2's fast paths underneath them |
+| `wald/belief.py` | the sealed `Belief` and the verbs allowed to touch it — `prior`, `push`, `condition`, `expect`, `report`; the belief update of §2 is written once, here, and so is E2's unnormalised stand-in for the three of them, and so is the operation counter that watches it (v0.1 E6) |
+| `wald/decide.py` | the one `decide`: V₀, Qₙ, Vₙ and the argmax exist here and nowhere else (E5), with E2's fast paths underneath them — and `step`, v0.1's `decide⁺`, which is that same argmax over a menu with θ on the end of it (S8) |
 | `wald/same.py` | which acts a belief cannot tell apart, so the lookahead evaluates one of each group and J3 takes the first (E2) — it decides sameness and never a value |
-| `wald/episode.py` | `Door` and `run`: the episode of §2 in the page's order, and the only place the floor `min(d, n)` is applied (E3) |
+| `wald/episode.py` | `Door` and `run`: the episode of §2 in the page's order, the only place a think act is charged and its operations read, and — through `step` — the only place the floor `min(d, n)` is applied (E3) |
 | `wald/kit_adapter.py` | the `laws/INTERFACE.md` shim: plain dicts in, kernel types out, no logic of its own |
 | `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, and the census of quantities by source |
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
@@ -31,8 +31,11 @@ whole of what `src/wald` may import.
   fast paths supply beliefs and values, never acts (E5, J10).
 - **The belief update.** `belief._update`. The public verb `condition` is that plus the token; the
   adapter is that without one, because the kit hands it raw outcomes rather than minted Obs.
-- **The floor.** `episode.run`, as `min(world.d, n)`. `decide` is always exactly decide_n: an
-  evaluator is compared with the reference *at the same d* (E3), so the depth is never baked into it.
+- **The floor.** `decide.step`, as `min(world.d, n)`, called by `episode.run` and by nothing else.
+  `decide` is always exactly decide_n: an evaluator is compared with the reference *at the same d*
+  (E3), so the depth is never baked into it. The floor moved from the loop into the step when v0.1
+  gave the step a second depth to weigh, because ĝ reads the raw n and the value reads the floored
+  one.
 
 ## The refusals, and one reading that had to be chosen
 
@@ -143,9 +146,57 @@ minus mean attempts at depth 2 is **0.000** over all 200 answers. The two depths
 same game — they part company on 8 answers — but the deeper agent gains an attempt on one and loses
 one on another. Nothing was tuned to make that number larger.
 
+## The think act (CHARTER v0.1)
+
+The amendment adds one entry to the menu, and `decide` buys it or does not. Everything of v0 is
+where it was: the argmax, the lookahead and the loop are still written once, the three fast paths
+are still underneath them, and no act of any v0 World changed.
+
+`decide.step` is the whole of §2's `think` block, in S7's order of precedence:
+
+| the step reports | when | what it plays | what it pays |
+|---|---|---|---|
+| `floor` | the World declares no Depth⁺ | decide_min(d,n) | — |
+| `struck_n` | n ≤ d, or M holds no observational act | decide_min(d,n) | — |
+| `struck_cap` | ĝ = cap − V_d ≤ c: the bounds settle it and f is not read | decide_min(d,n) | — |
+| `think` | V_d + f·ĝ − c > V_d, θ being last in M (J14) | decide_min(d⁺,n) (C17) | c = r·ops(s(b)) |
+| `refused` | otherwise | decide_min(d,n) | — |
+
+**The cap** (J12) is `max( V₀, Σ_ω b(ω)·best(ω) − the cheapest price in M )`, where best(ω) is the
+most that state can still earn: its best terminal utility, or the best u_end of a menu act whose
+kernel can emit that outcome *in that state*. One pass over the live states and the menu. It reads
+V₀ — a max over terminal acts, no lookahead at all — and never evaluates Vₙ for n > 0, and never
+reads d⁺ (S9, C19). The per-state form is the one that is a bound: valuing ending branches at the
+root posterior instead gives 10 on `meta_check`'s `FIXED_CAP`, where V₅ is 40951/2000.
+
+**The floor is the step's**, not the loop's, because the two depths are read against different n:
+V_d is at min(d, n) and ĝ is 0 exactly when the raw n is at or below d. The deeper look is the
+same `_value` with a different n — not a second lookahead and not a second World (E5, S8) — so the
+memo of brief 004 answers most of a thought before it starts.
+
+**The operation counter** (E6) lives where the arithmetic does: `belief._dot`, `belief._split` and
+`belief._mass` tally what they multiply and add, in bulk, one integer add per call rather than one
+per operation, so the Wordle packs pay nothing for being watched. `decide` zeroes the count as a
+thought begins and never reads it; `episode.run` reads it when the thought is done and puts it in
+`Result.operations`, and `report` prints it beside the `ops(s(b))` the pack predicted. Two
+evaluators may count differently, and the page says so: the count is a measurement, never a value,
+and never a clock. On the page's Appendix B a thought predicted at 200 operations takes 106 here.
+
+**Five more refusals**, by name: `FRACTION`, `COST`, `DEPTH_PLUS`, `RATE`, `UNSCORED`. A negative
+Rate is the one thing §1 forbids without naming a clause for it; `meta_check.refuse_meta`, which
+INTERFACE calls the reference and the definition, refuses it with the Cost table, and this kernel
+takes that name — as it took `PRICE` and the `fresh` half of `SHARED_SOURCE` under kit v0.1.
+
+**A kit World dict is a probe, not a pack.** C19 hands the kernel a World whose d⁺ is N, which J11
+refuses in a pack, to prove that the cap does not read d⁺. So `declare` is `build` — §1's
+conversion, refused where it cannot be built — plus the rulings a pack must satisfy, and
+`kit_adapter` stops at `build`, as it already did for the clock and the S5 stance.
+
 ## Not here
 
 No `host` form — withdrawn by SURFACE K4. No floats, no learning. No fast path that is not exact:
 no pruning by a threshold, no sampling, and no special case for a uniform prior or a deterministic
 kernel. The kernel does not know what game it is playing — there is no feedback rule and no word
-list in `src/wald`.
+list in `src/wald`. No clock: `time` is not imported anywhere here, and a thought costs the number
+the pack declared, never a number measured. No second decider: θ is an entry of one menu, read by
+the one `decide` (S8). No pack yet declares a think act — the surface syntax for it is 005b.

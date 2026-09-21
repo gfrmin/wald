@@ -1,5 +1,7 @@
 """The one `decide`. V_0, Q_n, V_n and the argmax of section 2 exist here and nowhere else:
-packs and fast paths supply beliefs and values, never choices (E5).
+packs and fast paths supply beliefs and values, never choices (E5). Beside it, and made of it,
+is CHARTER v0.1's `decide+`: the same argmax over a menu with one more entry on it, the think
+act, whose value is the room a deeper look could find priced against what it costs (S8).
 
 Under the loop are E2's three fast paths, and none of them is a choice. The belief is carried
 unnormalised, so `push`, `condition` and expectation happen in one pass and no division is done
@@ -9,7 +11,13 @@ for a measure, a menu and an n is looked up (`world.work`). Nothing is approxima
 no sample, no bound, no float. The argmax below is the page's, written once."""
 from fractions import Fraction
 
-from .belief import _dot, _mass, _measure, _split
+from .belief import _count_reset, _dot, _mass, _measure, _split
+
+FLOOR = "floor"
+STRUCK_N = "struck_n"
+STRUCK_CAP = "struck_cap"
+REFUSED = "refused"
+THINK = "think"
 
 
 def _q(measure, mass, world, name, n, used, same, memo, reps):
@@ -80,3 +88,76 @@ def value(belief, world, n, used=frozenset()):
 def decide(belief, world, n, used=frozenset()):
     """decide_n(b,M). The single exit: only this turns a belief into an act (S1)."""
     return _solve(belief, world, n, used)[1][1]
+
+
+def _best(measure, world, menu):
+    """best(w) of the cap: the most state w can still earn -- the best terminal act there, or the
+    best ending outcome of a menu act whose kernel can emit it in w [J12]. Acts whose endings w
+    cannot see are not in this max: the outcome is chosen, but only among the ones that can
+    happen in w, which is what makes the cap a bound and not a wish."""
+    out = {}
+    for state in measure:
+        top = max([u[state] for u in world.T.values()])
+        for name in menu:
+            act = world.O[name]
+            for o, u_end in act.ends.items():
+                if u_end[state] > top and act.kernel.at(state, o) > 0:
+                    top = u_end[state]
+        out[state] = top
+    return out
+
+
+def _cap(measure, mass, world, menu, v0):
+    """cap(b,M) = max( V_0(b,M), sum_w b(w) best(w) - the cheapest price in M ), and V_0 alone
+    when M holds no observational act [J12]. An episode either stops at once, earning at most
+    V_0, or pays at least the cheapest price and ends on some utility its state can earn: told
+    the state and handed the best of those, it earns this and no more, so V_m <= cap for every m.
+
+    One pass over the live states and the menu. V_0 is the max over terminal acts and no
+    lookahead at all; nothing here evaluates V_n for n > 0, and nothing here reads d+ (S9, C19):
+    the cap is a scale for f, not deliberation about deliberation."""
+    if not menu:
+        return v0
+    reach = _dot(measure, _best(measure, world, menu)) / mass
+    return max(v0, reach - min([world.O[name].price for name in menu]))
+
+
+def step(belief, world, n, used=frozenset()):
+    """decide+(b,M,n) of CHARTER v0.1 section 2: (the act, S7's bucket, the predicted cost paid).
+
+        a v0 World (no Depth+)   -> the floor's act, "floor",      0
+        n <= d, or M has no O    -> the floor's act, "struck_n",   0    ghat = 0 exactly
+        ghat = cap - V_d <= c    -> the floor's act, "struck_cap", 0    bounds settle it, f unread
+        V_d + f*ghat - c > V_d   -> decide_{d+}(b,M), "think",     c    theta is last in M (J14)
+        otherwise                -> the floor's act, "refused",    0
+
+    In that order, which is S7's order of precedence. Only the fourth line looks deeper, and only
+    after the cost is charged (S9). The deeper look is the lookahead below with a different n --
+    there is no second lookahead and no second World (E5, S8) -- so what brief 004's memo already
+    worked out at depth d it does not work out again.
+
+    The floor is applied here, and here only, because ghat reads the raw n: at n <= d the deeper
+    evaluation is the same evaluation. `decide` is unchanged -- it is decide_n at the n it is
+    given, and this is the step that knows which n that is (E3)."""
+    same, memo = world.work()
+    reps = tuple(world.T)
+    used = frozenset(used)
+    measure = _measure(belief)
+    v, act = _value(measure, world, min(world.d, n), used, same, memo, reps)
+    if world.dplus is None:
+        return act, FLOOR, Fraction(0)          # a v0 World: the step is the floor, and no more
+    menu = world.menu(used)
+    if n <= world.d or not menu:
+        return act, STRUCK_N, Fraction(0)
+    mass = _mass(measure)                       # one, for a belief, and asked for only here
+    v_d = v / mass
+    v_0 = _value(measure, world, 0, used, same, memo, reps)[0] / mass
+    gain = _cap(measure, mass, world, menu, v_0) - v_d
+    cost = world.rate * world.ops[len(measure)]
+    if gain <= cost:
+        return act, STRUCK_CAP, Fraction(0)
+    if v_d + world.fraction * gain - cost > v_d:
+        _count_reset()                                              # E6: the thought starts here
+        deeper = _value(measure, world, min(world.dplus, n), used, same, memo, reps)[1]
+        return deeper, THINK, cost                                  # C17: what is bought is played
+    return act, REFUSED, Fraction(0)
