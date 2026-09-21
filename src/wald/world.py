@@ -5,10 +5,12 @@ from fractions import Fraction
 from .dist import Dist
 from .kernels import Kernel
 from .same import Sameness
-from .refusals import (DEPTH, EMPTY_T, KERNEL_ROW, PRICE, PRIOR, SHARED_SOURCE, TABLE_SHAPE,
-                       TABLE_SOURCE, ZERO_EVIDENCE, Refused)
+from .refusals import (COST, DEPTH, DEPTH_PLUS, EMPTY_T, FRACTION, KERNEL_ROW, PRICE, PRIOR,
+                       RATE, SHARED_SOURCE, TABLE_SHAPE, TABLE_SOURCE, UNSCORED, ZERO_EVIDENCE,
+                       Refused)
 
 TAGS = ("data", "elicited", "fitted")
+OWNED = ("elicited", "fitted")
 TABLES = ("prior", "utility", "price", "horizon", "depth")
 
 
@@ -30,9 +32,9 @@ class World:
     """The declaration: Omega through its Prior, the menu M as T then O, and the clock."""
 
     __slots__ = ("prior", "T", "O", "N", "d", "closed", "bottom", "table_sources", "components",
-                 "_work")
+                 "dplus", "fraction", "rate", "ops", "score", "_work")
 
-    def __init__(self, prior, T, O, N, d, closed, bottom, table_sources, components):
+    def __init__(self, prior, T, O, N, d, closed, bottom, table_sources, components, meta):
         self._work = None
         self.prior = prior
         self.T = T
@@ -43,6 +45,9 @@ class World:
         self.bottom = bottom
         self.table_sources = table_sources
         self.components = components
+        # CHARTER v0.1 section 1: the think act's five tables. A World that declares no Depth+
+        # is a v0 World -- `dplus` is None, and then nothing reads the other four.
+        self.dplus, self.fraction, self.rate, self.ops, self.score = meta
 
     def omega(self):
         return tuple(self.prior.carrier())
@@ -72,8 +77,14 @@ def _total(table, omega, what):
                       + ", which is not in Omega")
 
 
-def declare(spec):
-    """Accept a pack, or refuse it by the name of the clause it breaks."""
+def build(spec):
+    """The World of section 1, out of a spec: the conversion, and the refusals that are the
+    conversion itself -- a prior that is not one, a row that does not sum to 1, a table that is
+    not a function on Omega.
+
+    `declare` is this plus the rulings a pack must satisfy. The kit's shim stops here, because a
+    kit World dict is a probe and not a pack: C19 of CHARTER v0.1 hands the kernel a d+ that J11
+    refuses in a pack, to prove that the cap does not read d+."""
     T = spec["T"]
     if not T:
         raise Refused(EMPTY_T, "a World with nothing to do")
@@ -152,4 +163,47 @@ def declare(spec):
                 raise Refused(SHARED_SOURCE, repr(name) + " is `fresh` and reads " + repr(source)
                               + " at every execution, and it is not a component of Omega")
 
-    return World(prior, dict(T), acts, N, d, closed, bottom, dict(table_sources), components)
+    meta = (spec.get("dplus", None), spec.get("fraction", None), spec.get("rate", None),
+            dict(spec.get("ops", None) or {}), spec.get("score", None))
+    return World(prior, dict(T), acts, N, d, closed, bottom, dict(table_sources), components, meta)
+
+
+def _rulings(world):
+    """CHARTER v0.1's tables, refused by name. A World that declares no Depth+ is a v0 World:
+    it reads none of them, and none of these names can speak to it."""
+    if world.dplus is None:
+        return
+    sources = world.table_sources
+    if world.fraction is None or not 0 <= world.fraction <= 1:
+        raise Refused(FRACTION, "f = " + str(world.fraction) + " is not a share of the room (S6)")
+    if sources.get("fraction", None) not in OWNED:
+        raise Refused(FRACTION, "the Fraction is a meta-belief, so it is `elicited` or `fitted`")
+    states = len(world.prior.carrier())
+    if set(world.ops) != set(range(1, states + 1)):
+        raise Refused(COST, "the Cost says nothing at some s in 1.." + str(states)
+                      + ": it is a cell for each count of live states")
+    if any(cell < 0 for cell in world.ops.values()):
+        raise Refused(COST, "a thought that takes fewer than no operations")
+    if sources.get("cost", None) not in OWNED:
+        raise Refused(COST, "the Cost is a meta-belief, so it is `elicited` or `fitted`")
+    # A Rate below zero the page does not name, only forbids (section 1: r in Q>=0). The reference
+    # refuses it in the line that refuses the Cost table (`meta_check.refuse_meta`), and the
+    # reference is the definition: this kernel takes its name, as it took PRICE under kit v0.1.
+    # Recorded in QUESTIONS.md as Q4, with the World that shows it.
+    if world.rate is None or world.rate < 0:
+        raise Refused(COST, "the owner is paid to think: r = " + str(world.rate))
+    if sources.get("rate", None) != "elicited":
+        raise Refused(RATE, "the Rate is the owner's exchange rate, so it is `elicited`")
+    if not (world.d == 1 and world.dplus == 2 and world.N >= 2):
+        raise Refused(DEPTH_PLUS, "a World with a think act declares d = 1, d+ = 2 and N >= 2 (J11),"
+                      + " not d = " + str(world.d) + ", d+ = " + str(world.dplus)
+                      + ", N = " + str(world.N))
+    if "fitted" in (sources.get("fraction", None), sources.get("cost", None)) and world.score is None:
+        raise Refused(UNSCORED, "a fitted meta-table is fenced, and carries its held-out Score (J18)")
+
+
+def declare(spec):
+    """Accept a pack, or refuse it by the name of the clause it breaks."""
+    world = build(spec)
+    _rulings(world)
+    return world

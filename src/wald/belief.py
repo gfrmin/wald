@@ -6,6 +6,13 @@ Underneath those three verbs, and replacing them and nothing else, is E2's fast 
 mass unnormalised. `_split` is `push` and `condition` in one pass, with the division left out
 because the lookahead multiplies it straight back in; `_dot` is expectation over what comes out.
 The belief a host or an episode holds is still normalised, and still changes only by `condition`.
+
+The operations counted here are the operations of CHARTER v0.1 E6: one for each arithmetic
+operation on Q that `push`, `condition` and expectation perform in the evaluator that runs. In
+this evaluator those three are `_split`, `_dot` and `_mass`, so every multiplication and addition
+those three do is counted, and no thought passes through the public `push` and `expect` at all.
+The count is a scoreboard measurement -- `decide` zeroes it as a thought begins and never reads
+it; `episode.run` reads it when the thought is done. It is not a clock and it is in no value.
 """
 from fractions import Fraction
 
@@ -14,6 +21,20 @@ from .obs import check_unspent, spend
 from .refusals import WorldFalsified
 
 _SEAL = object()
+
+_OPS = 0
+
+
+def _count_reset():
+    """E6: the thought starts here. `decide` calls this and reads nothing."""
+    global _OPS
+    _OPS = 0
+
+
+def _counted():
+    """The operations since the count was zeroed. Read by the episode and by `report`, and by
+    nothing that decides anything."""
+    return _OPS
 
 
 class Belief:
@@ -86,6 +107,13 @@ def _measure(belief):
     return {state: p for state, p in belief._w.items() if p}
 
 
+def _tally(done):
+    """One integer add per call, not per operation: counting must not be dearer than the
+    arithmetic it counts."""
+    global _OPS
+    _OPS += done
+
+
 def _split(measure, rows):
     """`push` and `condition` in one pass, unnormalised: for every outcome of positive mass, the
     mass m(w) K_k(o|w) over the states that can emit it.
@@ -95,6 +123,7 @@ def _split(measure, rows):
     is written down and taken away again in the same line: it is not done. Nothing is dropped but
     a zero, and a zero is not a number the page ever adds."""
     parts = {}
+    done = 0
     for state, p in measure.items():
         for o, q in rows[state].items():
             if not q:
@@ -103,19 +132,27 @@ def _split(measure, rows):
             if part is None:
                 part = parts[o] = {}
             # m(w) K(o|w). Not multiplying by one is arithmetic, not a special case for a
-            # kernel that happens to be deterministic: it is the same number either way.
-            part[state] = p if q == 1 else p * q
+            # kernel that happens to be deterministic: it is the same number either way -- and
+            # an operation not performed is an operation not counted (E6).
+            if q == 1:
+                part[state] = p
+            else:
+                part[state] = p * q
+                done += 1
+    _tally(done)
     return parts
 
 
 def _dot(measure, f):
     """sum_w m(w) f(w). Expectation when the mass is one, and what stands in its place when it
     is not: mass(m) E_{m/mass(m)}[f]."""
+    _tally(2 * len(measure))                      # one product and one sum per state (E6)
     return sum([p * f[state] for state, p in measure.items()], Fraction(0))
 
 
 def _mass(measure):
     """sum_w m(w). Needed only where a price is paid, so it is asked for and not carried."""
+    _tally(len(measure))
     return sum(measure.values(), Fraction(0))
 
 
@@ -128,6 +165,15 @@ def condition(belief, world, obs):
     return posterior
 
 
-def report(belief):
-    """Render a belief for display. What comes back has no operations (S1)."""
-    return render(", ".join(str(state) + " " + str(p) for state, p in belief._w.items()))
+def report(belief, world=None):
+    """Render a belief for display. What comes back has no operations (S1).
+
+    Given the World as well, it renders what the World predicted a thought about this belief would
+    cost and what the last one actually took (E6): a measurement printed side by side, never a
+    number any verb reads."""
+    text = ", ".join(str(state) + " " + str(p) for state, p in belief._w.items())
+    if world is not None and world.dplus is not None:
+        live = len(_measure(belief))
+        text += (" | " + str(live) + " live: " + str(world.ops[live]) + " operations predicted, "
+                 + str(_counted()) + " counted")
+    return render(text)

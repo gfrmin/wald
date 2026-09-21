@@ -93,3 +93,44 @@ act("test", once=True, kernel=table({"sick": {"+": 9/10, "-": 1/10}, "well": {"+
 **What I did.** Followed the page: `MISSING`, raised the moment a component is asked for before the
 space is declared, in the same voice as the prior's (`"prior: every table over states comes after the
 prior"`). No corpus pack omits `space`, so R2 and R3 are unaffected.
+
+---
+
+## Q4 (brief 005a). A negative Rate is forbidden by CHARTER v0.1 §1 but no clause is named for it
+
+**Status:** as Q1–Q3 — recorded, and the reference followed. Not a point I am stopped on: the page
+forbids the number, so it is refused either way, and no act of any World changes with the name.
+
+**The page.** CHARTER v0.1 §1: *"Rate r ∈ ℚ≥0, utility per operation: the owner's exchange rate.
+Housed; its source is `elicited`, any other is refused by the name RATE."* The sentence names
+`RATE` for the **source** and says nothing about the name for a value below zero. S6 names
+`FRACTION` and `COST` for the two meta-beliefs' values, and r is neither: it is the owner's price,
+not a belief about the agent's computation.
+
+**The reference.** `laws/meta_check.refuse_meta` refuses it, with the Cost table, in one line:
+
+```python
+if world["rate"] < 0 or set(world["ops"]) != set(range(1, len(world["prior"]) + 1)) \
+        or min(world["ops"].values()) < 0:
+    raise Refused("COST")
+```
+
+`laws/INTERFACE.md`'s kit v0.7 section glosses the two names the other way — `COST` as "a missing
+or negative cell", `RATE` as "a rate whose source is not `elicited`" — and so names nothing for a
+negative rate at all. `kit_think.refusal_cases()` does not test it, so the kit is green under
+either reading.
+
+**The World.** Appendix A with one number changed:
+
+```python
+{"prior": {"sick": F(1, 5), "well": F(4, 5)}, "T": APPX_T,
+ "O": {"test": act(APPX_K, F(1, 2), False)},
+ "N": 2, "d": 1, "dplus": 2, "fraction": F(1, 2), "rate": F(-1, 1000),
+ "ops": {1: F(100), 2: F(200)}}                      # r < 0: the owner is paid to think
+```
+
+**What I did.** Took the reference's name, `COST`, since INTERFACE calls `meta_check.py` the
+reference and the definition for kit v0.7 — as this kernel took `PRICE` and the `fresh` half of
+`SHARED_SOURCE` under kit v0.1, both of which kit v0.2 then adopted. If the author prefers `RATE`
+to cover the Rate table's value as well as its source, the §1 row wants the same half-sentence the
+Fraction and Cost rows have, and I will move it.
