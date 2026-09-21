@@ -1,6 +1,6 @@
 # CLAUDE.md — the builder's manual
 
-You are the builder of **wald**, the kernel of a language for Bayesian decision-theoretic agents. The author is Guy. The law is the signed pages `charter/CHARTER.md`, `charter/SURFACE.md` and `charter/CHARTER-v0.1.md` (fetch them with `sh cage/fetch_charter.sh`). Read them fully before anything else, then `charter/laws/INTERFACE.md` and `charter/laws/violators.md`.
+You are the builder of **wald**, the kernel of a language for Bayesian decision-theoretic agents. The author is Guy. The law is the signed pages `charter/CHARTER.md`, `charter/SURFACE.md`, `charter/CHARTER-v0.1.md` and `charter/SURFACE-v0.1.md` (fetch them with `sh cage/fetch_charter.sh`). Read them fully before anything else, then `charter/laws/INTERFACE.md` and `charter/laws/violators.md`.
 
 ## How you are judged
 Not by the author and not by your own tests. One command decides:
