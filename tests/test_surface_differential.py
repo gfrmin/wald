@@ -27,7 +27,16 @@ SUBSTITUTIONS = [('source="data"', 'source="guessed"'), ('source="elicited"', ''
                  ('table(', 'host('), ('point(', 'pointer('), ('{"sick"', '{"sick": 1/5, "sick"'),
                  ('prior(', 'prior(by('), ('act(', 'x = act('), ('9/10', 'max(9,10)'),
                  ('4/5', '4/5 if True else 1/5'), ('space(', 'space2('), ('utility(', 'utility(**'),
-                 ('sha256=', 'sha=')]
+                 ('sha256=', 'sha='), ('think(fraction=1/2', 'think(fraction=3/2'),
+                 ('rate(1/1000', 'rate(-1/1000'), ('depth_plus(2', 'depth_plus(2/3'),
+                 ('cost([100, 200]', 'cost([100])'), ('source="elicited")\nthink', 'source="data")\nthink')]
+
+# SURFACE K7: a pack that breaks several rules may be refused by any one of their names, so two
+# checkers are allowed to differ here -- and one place they do. `build` reaches the World's own
+# v0 rules before `_rulings` reaches CHARTER v0.1's, and `laws/surface_check.validate` is the
+# other way round. Both names are of a rule the variant really breaks.
+WORLD_FIRST = {"ZERO_EVIDENCE", "SHARED_SOURCE"}
+THINK_ACT = {"FRACTION", "COST", "RATE", "DEPTH_PLUS", "UNSCORED", "TABLE_SOURCE"}
 
 
 def variants(text):
@@ -80,13 +89,17 @@ class AgainstTheReference(unittest.TestCase):
                     continue
                 where = name + " :: " + label
                 if theirs == "raised AttributeError" and mine == "MISSING":
-                    allowed += 1                    # QUESTIONS.md Q3: no `space`
+                    allowed += 1                    # QUESTIONS.md Q3, closed at kit v0.8
                 elif theirs != mine and not isinstance(theirs, str) and mine == "DUPLICATE":
-                    allowed += 1                    # QUESTIONS.md Q1: a key written twice
+                    allowed += 1                    # QUESTIONS.md Q1, closed at kit v0.8
+                elif mine in WORLD_FIRST and theirs in THINK_ACT:
+                    allowed += 1                    # SURFACE K7, above: two rules, two names
                 else:
                     self.fail("%s: reference %r, mine %r" % (where, theirs, mine))
         self.assertGreater(checked, 2000, "the corpus should give thousands of mutations")
         self.assertLess(allowed, checked // 50, "only the recorded divergences may differ")
+        # Q1 and Q3 stopped firing when the kit adopted both readings; the branches stay so that
+        # a regression in either would be named rather than merely counted.
 
     def test_the_corpus_as_written_agrees_exactly(self):
         for name, text in corpus():

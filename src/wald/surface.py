@@ -1,4 +1,8 @@
-"""SURFACE sections 1, 2 and 4: what a pack is, the nine declarations and the seven kernel forms.
+"""SURFACE sections 1, 2 and 4: what a pack is, its declarations and the seven kernel forms.
+
+SURFACE v0.1 adds five declarations to the nine -- `depth_plus`, `think`, `cost`, `rate` and
+`score` -- one for each table CHARTER v0.1's think act needs. They come together or not at all;
+a pack that writes none of them is a v0 pack and elaborates exactly as before.
 
 A pack is a text file in Python's syntax, **parsed and never executed** (K1). This module reads
 the syntax tree and builds the World spec of laws/INTERFACE.md; `declare` then has the last word,
@@ -11,12 +15,19 @@ from fractions import Fraction
 
 from .cells import Cells, where
 from .datafile import rows as data_rows
-from .refusals import (DEPTH, DUPLICATE, KERNEL_ROW, MISSING, NOT_A_DECLARATION, SYNTAX,
-                       TABLE_SHAPE, TABLE_SOURCE, UNDECLARED_READ, UNKNOWN_NAME, Refused)
+from .refusals import (COST, DEPTH, DEPTH_PLUS, DUPLICATE, FRACTION, KERNEL_ROW, MISSING,
+                       NOT_A_DECLARATION, RATE, SYNTAX, TABLE_SHAPE, TABLE_SOURCE, UNDECLARED_READ,
+                       UNKNOWN_NAME, UNSCORED, Refused)
 from .world import declare
 
-DECLARATIONS = ("world", "horizon", "depth", "space", "param", "prior", "utility", "price", "act")
+DECLARATIONS = ("world", "horizon", "depth", "space", "param", "prior", "utility", "price", "act",
+                "depth_plus", "think", "cost", "rate", "score")
 ONCE = ("world", "horizon", "depth", "space", "prior", "utility", "price")
+# SURFACE v0.1: the think act's four, each at most once and all four or none. `score` is not one
+# of them -- there are two tables that can be fitted, so there can be two scores.
+META = ("depth_plus", "think", "cost", "rate")
+OWNED = ("elicited", "fitted")      # a meta-belief is the owner's number or a fit, and nothing else
+SCORED = ("fraction", "cost")       # the two meta-tables a Score can be of (K14)
 KERNEL_FORMS = ("table", "by", "point", "data", "mixture", "product", "compose")
 
 
@@ -37,6 +48,7 @@ class Pack:
         self.named = set()
         self.closed = False
         self.bottom = None
+        self.scores = {}
         try:
             tree = ast.parse(text)
         except SyntaxError as e:
@@ -53,7 +65,7 @@ class Pack:
                           + ": a pack is a list of declarations and nothing else")
         call = statement.value
         said = call.func.id
-        if said in ONCE and said in self.said:
+        if (said in ONCE or said in META) and said in self.said:
             raise Refused(DUPLICATE, said + " is declared twice")
         self.said.add(said)
         if said == "world":
@@ -72,8 +84,10 @@ class Pack:
             self.say_utility(call)
         elif said == "price":
             self.say_price(call)
-        else:
+        elif said == "act":
             self.say_act(call)
+        else:
+            getattr(self, "say_" + said)(call)
 
     def arguments(self, call, positional, keywords, required=()):
         """Nothing in a pack has a default: what is not written is refused, never assumed."""
@@ -296,6 +310,84 @@ class Pack:
                 raise Refused(UNDECLARED_READ, "act " + repr(name) + " depends on a component"
                               + " outside reads=" + repr(reads))
 
+    # ---- the five declarations of SURFACE v0.1 (section 1)
+    def owned(self, node, tag, admits, name):
+        """A cell of a meta-table: K16's fence, then the cell itself. `admits` is what this table
+        could have said of itself, and a parameter may not carry in what it could not."""
+        return self.cells.owned(node, tag, admits, name)
+
+    def say_depth_plus(self, call):
+        """Depth+, written out although J11 fixes it at 2: a pack has no defaults (K13). Its one
+        admissible source is `elicited` -- it is the owner's (K18)."""
+        given = self.arguments(call, ("d",), ("source",), ("d",))
+        tag = self.source(given, call)
+        if tag != "elicited":
+            raise Refused(TABLE_SOURCE, where(call) + ": Depth+ is the owner's (J11), so it is"
+                          + " `elicited`, not " + repr(tag))
+        self.dplus_source = tag
+        self.dplus = self.owned(given["d"], tag, ("elicited",), TABLE_SOURCE)
+        self.cells.count(tag)
+
+    def say_think(self, call):
+        """The think act and its Fraction f: a meta-belief, so `elicited` or `fitted` (K13)."""
+        given = self.arguments(call, (), ("fraction", "source"), ("fraction",))
+        tag = self.source(given, call)
+        if tag not in OWNED:
+            raise Refused(FRACTION, where(call) + ": a Fraction is a meta-belief -- `elicited` or"
+                          + " `fitted`, not " + repr(tag))
+        self.fraction_source = tag
+        self.fraction = self.owned(given["fraction"], tag, OWNED, FRACTION)
+        self.cells.count(tag)
+
+    def say_cost(self, call):
+        """The Cost table: ops(s) for s = 1 .. |Omega|, positional. The positions are keys and no
+        numeral stands for one (K12), so the list's length is what is checked, against the states
+        the prior names (K10) -- which is why the prior comes first."""
+        states = self.states()
+        given = self.arguments(call, ("table",), ("source",), ("table",))
+        tag = self.source(given, call)
+        if tag not in OWNED:
+            raise Refused(COST, where(call) + ": a Cost is a meta-belief -- `elicited` or"
+                          + " `fitted`, not " + repr(tag))
+        if not isinstance(given["table"], ast.List):
+            raise Refused(NOT_A_DECLARATION, where(call) + ": the Cost is a list, one cell for"
+                          + " each count of live states, in order")
+        cells = [self.owned(e, tag, OWNED, COST) for e in given["table"].elts]
+        if len(cells) != len(states):
+            raise Refused(COST, where(call) + ": " + str(len(cells)) + " cells for "
+                          + str(len(states)) + " states")
+        self.ops = {s: cell for s, cell in enumerate(cells, 1)}
+        self.cost_source = tag
+        self.cells.count(tag, len(cells))
+
+    def say_rate(self, call):
+        """The Rate r, utility per operation: the owner's exchange rate, so `elicited`."""
+        given = self.arguments(call, ("r",), ("source",), ("r",))
+        tag = self.source(given, call)
+        if tag != "elicited":
+            raise Refused(RATE, where(call) + ": the Rate is the owner's exchange rate, so it is"
+                          + " `elicited`, not " + repr(tag))
+        self.rate_source = tag
+        self.rate = self.owned(given["r"], tag, ("elicited",), RATE)
+        self.cells.count(tag)
+
+    def say_score(self, call):
+        """The held-out Score of one fitted meta-table, named by `of` (K14). It is a measurement,
+        so its source is `data`; the rounding a rational needs is part of the measurement."""
+        given = self.arguments(call, ("value",), ("of", "source"), ("value", "of"))
+        tag = self.source(given, call)
+        of = self.cells.plain(given["of"])
+        if tag != "data":
+            raise Refused(TABLE_SOURCE, where(call) + ": a Score is measured, so it is `data`,"
+                          + " not " + repr(tag))
+        if of not in SCORED:
+            raise Refused(NOT_A_DECLARATION, where(call) + ": a Score is of the Fraction or of"
+                          + " the Cost, not of " + repr(of))
+        if of in self.scores:
+            raise Refused(DUPLICATE, "the Score of the " + of + " is declared twice")
+        self.scores[of] = self.owned(given["value"], tag, ("data",), TABLE_SOURCE)
+        self.cells.count(tag)
+
     # ---- the seven kernel forms (section 4)
     def distributions(self, rows, what):
         """Every row of probabilities is checked where it is written (S4)."""
@@ -410,8 +502,6 @@ class Pack:
         self.cells.refuse_unread()
         if self.N.denominator != 1 or self.d.denominator != 1:
             raise Refused(DEPTH, "the horizon and the depth are whole numbers")
-        if not set(self.prior) <= set(self.product()):
-            raise Refused(TABLE_SHAPE, "the prior names a state that is not in the space")
         spec = {"prior": self.prior, "T": self.T, "O": O,
                 "N": int(self.N), "d": int(self.d),
                 "table_sources": {"prior": self.prior_source, "utility": self.utility_source,
@@ -419,12 +509,45 @@ class Pack:
                                   "depth": self.depth_source, "kernels": dict(self.kernel_tags)},
                 "sources": {name: act["reads"] for name, act in self.acts.items()},
                 "components": list(self.components())}
+        self.say_the_think_act(spec)
         if self.closed:
             spec["closed"] = True
         if self.bottom is not None:
             spec["bottom"] = self.bottom
+        # Last of the surface's own, so that a pack breaking this rule and one of the think act's
+        # is refused by the same one of the two names the reference gives it (K7 allows either).
+        if not set(self.prior) <= set(self.product()):
+            raise Refused(TABLE_SHAPE, "the prior names a state that is not in the space")
         declare(spec)
         return spec
+
+
+    def say_the_think_act(self, spec):
+        """The four declarations come together or not at all, and a Score comes with the fitted
+        table it scores. What the World then makes of the numbers is `declare`'s, not ours."""
+        declared = [name for name in META if name in self.said]
+        if not declared and not self.scores:
+            return                                  # a v0 pack: it says nothing of a think act
+        unsaid = [name for name in META if name not in self.said]
+        if unsaid:
+            raise Refused(MISSING, unsaid[0] + ": the think act's four tables come together"
+                          + " or not at all")
+        if self.dplus.denominator != 1:
+            raise Refused(DEPTH_PLUS, "Depth+ is a whole number")
+        spec.update({"dplus": int(self.dplus), "fraction": self.fraction, "rate": self.rate,
+                     "ops": self.ops})
+        spec["table_sources"].update({"dplus": self.dplus_source, "fraction": self.fraction_source,
+                                      "cost": self.cost_source, "rate": self.rate_source})
+        fitted = {table for table, tag in (("fraction", self.fraction_source),
+                                           ("cost", self.cost_source)) if tag == "fitted"}
+        unscored = sorted(fitted - set(self.scores))
+        if unscored:
+            raise Refused(UNSCORED, "the fitted " + unscored[0] + " carries its held-out Score")
+        stray = sorted(set(self.scores) - fitted)
+        if stray:
+            raise Refused(MISSING, "a Score of the " + stray[0] + ", which is not fitted")
+        if self.scores:
+            spec["score"] = dict(self.scores)
 
 
 def check(text, data_dir="."):

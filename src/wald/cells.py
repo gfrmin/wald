@@ -3,7 +3,14 @@
 
 Two vocabularies meet here and they are not the same. A *plain* position -- a name in quotes,
 True or False, lists and tuples of them -- holds no number at all: a numeral there is unhoused.
-A *cell* holds an integer, a parameter, unary minus, and + - * / over these, exactly."""
+A *cell* holds an integer, a parameter, unary minus, and + - * / over these, exactly.
+
+SURFACE v0.1 K16 adds a second fence over the first. v0's fence is absolute and about one word:
+a table that does not say `fitted` may not read a `fitted` parameter. K16's is about the five
+meta-tables of CHARTER v0.1, which are not beliefs about the world but about the agent, and it
+asks a transitive question: every parameter carries the sources it descends from, and a
+meta-table admits only parameters that descend from sources it could have declared itself. A
+second `param` is not a laundry."""
 import ast
 import keyword
 from fractions import Fraction
@@ -27,6 +34,7 @@ class Cells:
     def __init__(self):
         self.params = {}
         self.source_of = {}
+        self.provenance = {}
         self.read = set()
         self.census = {tag: 0 for tag in TAGS}
 
@@ -96,7 +104,7 @@ class Cells:
 
     def declare_param(self, name_node, value_node, tag):
         """A table cell written once and read by name (SURFACE K11). It keeps its own source
-        wherever it is read."""
+        wherever it is read, and -- K16 -- it also keeps the sources it came from."""
         name = self.plain(name_node)
         if name in self.params:
             raise Refused(DUPLICATE, "the parameter " + repr(name) + " is declared twice")
@@ -104,7 +112,31 @@ class Cells:
             raise Refused(BAD_NAME, repr(name) + " cannot be read from a cell")
         self.params[name] = self.number(value_node, tag)
         self.source_of[name] = tag
+        self.provenance[name] = self.descends_from(value_node, tag)
         self.count(tag)
+
+    def descends_from(self, node, tag):
+        """K16: what a cell's value came from -- the source it is written under, and the
+        provenance of every parameter it reads. Read once, where the cell is written, because
+        every parameter it can name is already declared."""
+        came = {tag}
+        for inner in ast.walk(node):
+            if isinstance(inner, ast.Name) and inner.id in self.provenance:
+                came |= self.provenance[inner.id]
+        return came
+
+    def owned(self, node, tag, admits, name):
+        """A cell of one of CHARTER v0.1's five meta-tables (K16). `admits` is the set of sources
+        the table could have declared for itself; a parameter that descends from anything else is
+        refused by the table's own name, however many parameters it was routed through. The
+        `fitted` fence underneath is `number`'s and is unchanged."""
+        for inner in ast.walk(node):
+            if isinstance(inner, ast.Name) and inner.id in self.provenance \
+                    and not self.provenance[inner.id] <= set(admits):
+                raise Refused(name, where(inner) + ": " + inner.id + " descends from "
+                              + ", ".join(sorted(self.provenance[inner.id])) + "; this table is"
+                              + " the owner's own and admits " + ", ".join(sorted(admits)))
+        return self.number(node, tag)
 
     def refuse_unread(self):
         """CHARTER S3: every declared parameter is read."""

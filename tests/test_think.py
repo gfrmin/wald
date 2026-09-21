@@ -21,7 +21,7 @@ from wald.world import build, declare
 SCAN_K = {"sick": {"y": F(9, 10), "n": F(1, 10)}, "well": {"y": F(2, 5), "n": F(3, 5)}}
 META = {"N": 2, "d": 1, "dplus": 2, "fraction": F(1, 2), "rate": F(1, 1000),
         "ops": {1: F(100), 2: F(200)}}
-META_SRC = {"fraction": "elicited", "cost": "elicited", "rate": "elicited"}
+META_SRC = {"dplus": "elicited", "fraction": "elicited", "cost": "elicited", "rate": "elicited"}
 
 
 def thinker(O, **kw):
@@ -241,9 +241,6 @@ class TheTablesAreRefusedByName(unittest.TestCase):
         s = vector_A()
         s["table_sources"]["cost"] = "data"
         self.assertEqual(self.refuse(s), "COST")
-        # The page forbids r < 0 (section 1) and names no clause; `meta_check.refuse_meta`,
-        # which is the definition, refuses it with the Cost table.
-        self.assertEqual(self.refuse(vector_A(rate=F(-1, 1000))), "COST")
 
     def test_the_depth_it_buys(self):
         for bad in (vector_A(dplus=1), vector_A(dplus=3, N=3), vector_A(d=2, N=3, dplus=3),
@@ -254,13 +251,29 @@ class TheTablesAreRefusedByName(unittest.TestCase):
         s = vector_A()
         s["table_sources"]["rate"] = "fitted"
         self.assertEqual(self.refuse(s), "RATE")
+        # Q4, answered: the page forbids r < 0 and named no clause; ERRATA queues RATE for
+        # CHARTER v0.2 and SURFACE v0.1 K15 supplies it meanwhile.
+        self.assertEqual(self.refuse(vector_A(rate=F(-1, 1000))), "RATE")
 
-    def test_a_fitted_meta_table_carries_its_score(self):
-        for table in ("fraction", "cost"):
+    def test_the_source_of_the_depth_it_buys(self):
+        # K18: the surface is stricter than CHARTER v0.1 S3 here, and the kernel with it.
+        for tag in ("data", "fitted"):
+            s = vector_A()
+            s["table_sources"]["dplus"] = tag
+            self.assertEqual(self.refuse(s), "TABLE_SOURCE")
+        del s["table_sources"]["dplus"]
+        self.assertEqual(self.refuse(s), "TABLE_SOURCE")
+
+    def test_a_fitted_meta_table_carries_its_own_score(self):
+        # K14: one Score per fitted table, named by the table it is of. The other table's will
+        # not do -- that is `two_fitted_one_score.py` in the corpus.
+        for table, other in (("fraction", "cost"), ("cost", "fraction")):
             s = vector_A()
             s["table_sources"][table] = "fitted"
             self.assertEqual(self.refuse(s), "UNSCORED")
-            s["score"] = F(-3, 2)
+            s["score"] = {other: F(-3, 2)}
+            self.assertEqual(self.refuse(s), "UNSCORED")
+            s["score"] = {table: F(-3, 2)}
             self.assertEqual(self.refuse(s), "ACCEPTED")
 
     def test_a_v0_world_is_refused_by_none_of_them(self):

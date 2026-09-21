@@ -60,3 +60,26 @@ def without(pack, line):
 
 def instead(pack, line, replacement):
     return "\n".join(replacement if l.startswith(line) else l for l in pack.splitlines()) + "\n"
+
+
+# SURFACE v0.1: CHARTER v0.1's appendix A, as a pack. The five declarations at the end are the
+# whole of the amendment's syntax; without them this is the v0 pack above with N = 2.
+THINKER = '''
+world("p", closed=True)
+horizon(2, source="elicited")
+depth(1, source="elicited")
+space({"health": ["sick", "well"]})
+prior({"sick": 1/5, "well": 4/5}, source="data")
+utility({"treat": {"sick": 0, "well": -2}, "leave": {"sick": -10, "well": 0}}, source="elicited")
+price({"test": 1/2}, source="elicited")
+act("test", once=False, kernel=table({"sick": {"+": 9/10, "-": 1/10}, "well": {"+": 1/5, "-": 4/5}}, source="data"), reads=["health"])
+depth_plus(2, source="elicited")
+think(fraction=1/2, source="elicited")
+cost([100, 200], source="elicited")
+rate(1/1000, source="elicited")
+'''
+
+
+def with_param(pack, declaration, line, replacement):
+    """A pack with one parameter declared before the think act, read where `line` was."""
+    return instead(pack, line, declaration + "\n" + replacement)

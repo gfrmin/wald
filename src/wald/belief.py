@@ -169,11 +169,12 @@ def report(belief, world=None):
     """Render a belief for display. What comes back has no operations (S1).
 
     Given the World as well, it renders what the World predicted a thought about this belief would
-    cost and what the last one actually took (E6): a measurement printed side by side, never a
-    number any verb reads."""
+    cost and what has been counted since the last thought began (E6): a measurement printed side
+    by side, never a number any verb reads. The counter is reset where a thought starts, so what
+    it shows is that thought's, and the label says so rather than leaving it to be assumed."""
     text = ", ".join(str(state) + " " + str(p) for state, p in belief._w.items())
     if world is not None and world.dplus is not None:
         live = len(_measure(belief))
         text += (" | " + str(live) + " live: " + str(world.ops[live]) + " operations predicted, "
-                 + str(_counted()) + " counted")
+                 + str(_counted()) + " counted since the last thought began")
     return render(text)
