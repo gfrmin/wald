@@ -68,26 +68,9 @@ class Pack:
         if (said in ONCE or said in META) and said in self.said:
             raise Refused(DUPLICATE, said + " is declared twice")
         self.said.add(said)
-        if said == "world":
-            self.say_world(call)
-        elif said == "horizon":
-            self.say_horizon(call)
-        elif said == "depth":
-            self.say_depth(call)
-        elif said == "space":
-            self.say_space(call)
-        elif said == "param":
-            self.say_param(call)
-        elif said == "prior":
-            self.say_prior(call)
-        elif said == "utility":
-            self.say_utility(call)
-        elif said == "price":
-            self.say_price(call)
-        elif said == "act":
-            self.say_act(call)
-        else:
-            getattr(self, "say_" + said)(call)
+        # One `say_` per name in DECLARATIONS, and a statement that is not one of those names
+        # never reaches here: the grammar is that tuple, and nothing else can be dispatched.
+        getattr(self, "say_" + said)(call)
 
     def arguments(self, call, positional, keywords, required=()):
         """Nothing in a pack has a default: what is not written is refused, never assumed."""
