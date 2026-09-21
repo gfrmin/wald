@@ -22,8 +22,9 @@ whole of what `src/wald` may import.
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
 | `wald/surface.py` | SURFACE §1, §2 and §4: the nine declarations and the seven kernel forms, parsed with `ast` and never executed, elaborated to a World spec — and SURFACE v0.1's five more, `depth_plus`, `think`, `cost`, `rate` and `score`, which come together or not at all |
 | `tools/wald_check.py` | outside `src/`: `python3 tools/wald_check.py pack.py` — the write, check, repair loop for every pack author |
-| `tools/make_wordle_pack.py` | outside `src/`: writes a Wordle pack from one of the charter's word lists at a given depth, the game's feedback rule included |
-| `tools/play_wordle.py` | outside `src/`: plays every answer of one or more packs through `wald.episode.run` behind a door that is the game, and writes the scoreboard |
+| `tools/make_wordle_pack.py` | outside `src/`: writes a Wordle pack from one of the charter's word lists at a given depth, the game's feedback rule included — and, with `--think`, the five declarations of SURFACE v0.1 |
+| `tools/play_wordle.py` | outside `src/`: plays every answer of one or more packs through `wald.episode.run` behind a door that is the game, and writes the scoreboard — S7's four buckets, the thought charged and E6's two operation counts included |
+| `tools/curves.py` | outside `src/`: CHARTER E3 when thinking has a price — the five policy values along a grid of rates, exactly, from the kernel's own acts |
 
 ## The three things that exist exactly once
 
@@ -234,6 +235,19 @@ as `fitted`. The positions of a `cost` list count for nothing.
 `check` still ends by calling `declare`: the World's own rules — f's range, a negative cell, a
 negative Rate, (d, d⁺, N) — are written once, in `world.py`, and the surface does not repeat them
 under its own names (K15).
+
+## The packs
+
+| pack | what it declares |
+|---|---|
+| `packs/wordle/pack.py` | Wordle on the charter's 40 words, depth 1 — the first pack, and the one the scoreboard was invented for |
+| `packs/wordle200/d1.py`, `d2.py` | the same game on 200 words at the two depths: E3's price of the floor, measured |
+| `packs/wordle200/adaptive.py` | depth 1 with a think act: `decide⁺` may buy the second look instead of declaring it, at a Rate the pack names |
+| `packs/twins/adaptive.py` | the same, on 124 near-twins (-IGHT, -OUND, -ATCH) — a lexicon where one look ahead cannot separate the candidates and the horizon runs out |
+
+All four Wordle packs are written by `tools/make_wordle_pack.py` and committed whole: every number
+the World holds is in the file. Regenerate them; do not edit them. The two adaptive packs differ
+from `d1.py` in five declarations at the end and in nothing else.
 
 ## Not here
 
