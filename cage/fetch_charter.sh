@@ -11,4 +11,5 @@ grep -q 'Good "git" signature for author@wald' ../.tagcheck || { echo "tag $TAG 
 git checkout -q "$SHA"
 git diff --quiet charter-v0 -- CHARTER.md || { echo "CHARTER.md differs from the signed page charter-v0"; exit 1; }
 git diff --quiet surface-v0 -- SURFACE.md || { echo "SURFACE.md differs from the signed page surface-v0"; exit 1; }
-echo "charter ok: $TAG at $SHA, signed by author@wald, page unchanged since charter-v0"
+git diff --quiet charter-v0.1 -- CHARTER-v0.1.md || { echo "CHARTER-v0.1.md differs from the signed page charter-v0.1"; exit 1; }
+echo "charter ok: $TAG at $SHA, signed by author@wald, pages unchanged since charter-v0, surface-v0, charter-v0.1"
