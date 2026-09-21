@@ -7,8 +7,11 @@ the pack that shows it. The author amends; I do not guess.
 
 ## Q1 (brief 002). A key written twice in `utility(...)` is accepted by `laws/surface_check.py`
 
-**Status:** a finding against the kit, not a question I am stopped on. SURFACE §1 gives the rule and
-I have implemented it; the reference checker does not enforce it in three places.
+**Status: closed — the kit adopted the page's reading.** `laws/surface_check.py` now routes every
+one of the three through `keys_once`, and `packs/poison` carries `b2_q1_ending_act_twice.py`,
+`b2_q1_ending_outcome_twice.py` and `b2_q1_terminal_act_twice.py`. The differential in
+`tests/test_surface_differential.py` no longer records a single divergence of this shape. The
+finding, as it was made against the checker of kit v0.3:
 
 **The page.** SURFACE §2, last paragraph: *"A key written twice in one dict, or a state listed twice
 in a `data` file, is refused."*
@@ -65,7 +68,8 @@ will add it.
 
 ## Q3 (brief 002). A pack with no `space` crashes `laws/surface_check.py` instead of being refused
 
-**Status:** as Q1 and Q2 — recorded, and the page implemented.
+**Status: closed — the kit adopted the page's reading.** `laws/surface_check.py` raises `MISSING`
+now, and `packs/poison/b2_q3_no_space.py` pins it. The finding, as it was made:
 
 **The page.** SURFACE §2: `space` is one of the seven declarations that "appear exactly once", and §5
 gives `MISSING` for a declaration a pack must make and did not.
@@ -98,8 +102,18 @@ prior"`). No corpus pack omits `space`, so R2 and R3 are unaffected.
 
 ## Q4 (brief 005a). A negative Rate is forbidden by CHARTER v0.1 §1 but no clause is named for it
 
-**Status:** as Q1–Q3 — recorded, and the reference followed. Not a point I am stopped on: the page
-forbids the number, so it is refused either way, and no act of any World changes with the name.
+**Status: answered — `RATE`.** The author has ruled, in brief 005b's charter. `charter/ERRATA.md`,
+under *Queued for CHARTER v0.2*: *"§1 of v0.1 names no clause for a Rate below zero, though it
+writes r ∈ ℚ≥0. Found by the builder in brief 005a (`QUESTIONS.md` Q4, with the World). Reading in
+force meanwhile: a negative Rate is refused by the name RATE, the name the row already gives the
+Rate's source; SURFACE v0.1 says so, `meta_check.refuse_meta` moves to it at kit v0.8, and the
+kernel's one string follows in brief 005b. No act changes."* SURFACE v0.1 K15 is the ruling:
+*"where CHARTER v0.1 has none (r below 0) the surface supplies RATE, and CHARTER v0.2 is to adopt
+it."* `src/wald/world.py` moved the string in brief 005b, and `tests/test_think.py` pins it.
+
+The record below is what was asked and why, kept as it was written.
+
+---
 
 **The page.** CHARTER v0.1 §1: *"Rate r ∈ ℚ≥0, utility per operation: the owner's exchange rate.
 Housed; its source is `elicited`, any other is refused by the name RATE."* The sentence names
@@ -134,3 +148,6 @@ reference and the definition for kit v0.7 — as this kernel took `PRICE` and th
 `SHARED_SOURCE` under kit v0.1, both of which kit v0.2 then adopted. If the author prefers `RATE`
 to cover the Rate table's value as well as its source, the §1 row wants the same half-sentence the
 Fraction and Cost rows have, and I will move it.
+
+**What happened.** The author preferred `RATE`, and the §1 row is to get that half-sentence at
+CHARTER v0.2. Moved in brief 005b; no act of any World changed with the name, as expected.

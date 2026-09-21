@@ -1,6 +1,6 @@
 # KERNEL.md — every module, and its one reason to exist
 
-The kernel of CHARTER v0 and of its amendment v0.1. Fifteen modules; if one of them cannot keep its line here, it should not
+The kernel of CHARTER v0 and SURFACE v0, and of their amendments v0.1. Fifteen modules; if one of them cannot keep its line here, it should not
 exist. Standard library only, exact rationals only, and the list in `cage/lint_imports.py` is the
 whole of what `src/wald` may import.
 
@@ -18,9 +18,9 @@ whole of what `src/wald` may import.
 | `wald/same.py` | which acts a belief cannot tell apart, so the lookahead evaluates one of each group and J3 takes the first (E2) — it decides sameness and never a value |
 | `wald/episode.py` | `Door` and `run`: the episode of §2 in the page's order, the only place a think act is charged and its operations read, and — through `step` — the only place the floor `min(d, n)` is applied (E3) |
 | `wald/kit_adapter.py` | the `laws/INTERFACE.md` shim: plain dicts in, kernel types out, no logic of its own |
-| `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, and the census of quantities by source |
+| `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, the census of quantities by source, and v0.1's K16 provenance — what sources a cell descends from, so a meta-table cannot be handed one it could not have declared |
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
-| `wald/surface.py` | SURFACE §1, §2 and §4: the nine declarations and the seven kernel forms, parsed with `ast` and never executed, elaborated to a World spec |
+| `wald/surface.py` | SURFACE §1, §2 and §4: the nine declarations and the seven kernel forms, parsed with `ast` and never executed, elaborated to a World spec — and SURFACE v0.1's five more, `depth_plus`, `think`, `cost`, `rate` and `score`, which come together or not at all |
 | `tools/wald_check.py` | outside `src/`: `python3 tools/wald_check.py pack.py` — the write, check, repair loop for every pack author |
 | `tools/make_wordle_pack.py` | outside `src/`: writes a Wordle pack from one of the charter's word lists at a given depth, the game's feedback rule included |
 | `tools/play_wordle.py` | outside `src/`: plays every answer of one or more packs through `wald.episode.run` behind a door that is the game, and writes the scoreboard |
@@ -41,7 +41,9 @@ whole of what `src/wald` may import.
 
 `declare` refuses a pack by the name of the clause it breaks: `EMPTY_T`, `PRIOR`, `KERNEL_ROW`,
 `PRICE`, `DEPTH`, `ZERO_EVIDENCE`, `TABLE_SOURCE`, `TABLE_SHAPE`, `SHARED_SOURCE`. (`PRICE` and the
-`fresh` half of `SHARED_SOURCE` were this kernel's readings under kit v0.1; kit v0.2 adopted both.)
+`fresh` half of `SHARED_SOURCE` were this kernel's readings under kit v0.1; kit v0.2 adopted both.
+A negative Rate was `COST` under kit v0.7, on the same grounds; SURFACE v0.1 K15 named it `RATE`
+instead, and it has moved — QUESTIONS.md Q4.)
 
 `TABLE_SHAPE` says a table over Ω is a function on Ω — defined at every state and at no other — and
 that an ending outcome is an outcome of its own act. Four packs are refused by it: a terminal
@@ -182,15 +184,56 @@ thought begins and never reads it; `episode.run` reads it when the thought is do
 evaluators may count differently, and the page says so: the count is a measurement, never a value,
 and never a clock. On the page's Appendix B a thought predicted at 200 operations takes 106 here.
 
-**Five more refusals**, by name: `FRACTION`, `COST`, `DEPTH_PLUS`, `RATE`, `UNSCORED`. A negative
-Rate is the one thing §1 forbids without naming a clause for it; `meta_check.refuse_meta`, which
-INTERFACE calls the reference and the definition, refuses it with the Cost table, and this kernel
-takes that name — as it took `PRICE` and the `fresh` half of `SHARED_SOURCE` under kit v0.1.
+**Five more refusals**, by name: `FRACTION`, `COST`, `DEPTH_PLUS`, `RATE`, `UNSCORED`, and
+`TABLE_SOURCE` for a sixth thing — a Depth⁺ that is not the owner's. A Rate below zero is `RATE`:
+§1 forbids the number and named no clause for it (QUESTIONS.md Q4), and the author has since
+answered — ERRATA queues `RATE` for CHARTER v0.2 and SURFACE v0.1 K15 supplies it meanwhile,
+under the name the Rate's own row already carries. A `fitted` Fraction or Cost carries **its own**
+Score, named by the table it is of (K14), so `world.score` is a dict and the other table's score
+will not do.
 
 **A kit World dict is a probe, not a pack.** C19 hands the kernel a World whose d⁺ is N, which J11
 refuses in a pack, to prove that the cap does not read d⁺. So `declare` is `build` — §1's
 conversion, refused where it cannot be built — plus the rulings a pack must satisfy, and
 `kit_adapter` stops at `build`, as it already did for the clock and the S5 stance.
+
+## The surface of the think act (SURFACE v0.1)
+
+Five declarations, one per table of CHARTER v0.1 §1, and each names its own source (K6):
+
+| written | says | its source |
+|---|---|---|
+| `depth_plus(2, source="elicited")` | Depth⁺, written out although J11 fixes it — a pack has no defaults | `elicited` alone (K18) |
+| `think(fraction=…, source=…)` | θ, and the Fraction f | `elicited` or `fitted` |
+| `cost([…], source=…)` | ops(s) for s = 1 … \|Ω\|, **positional** | `elicited` or `fitted` |
+| `rate(r, source="elicited")` | the Rate, utility per operation | `elicited` alone |
+| `score(v, of=…, source="data")` | the held-out Score of one fitted table | `data` alone (K18) |
+
+The first four come together or not at all (`MISSING`), each at most once (`DUPLICATE`); a pack
+that writes none of them is a v0 pack and elaborates byte for byte as before. `score` is not one
+of the four: there are two tables that can be fitted, so there can be two scores, one per table,
+and no more (`DUPLICATE`). The Cost's keys are **positions**, not numerals (K12), so the list's
+length is compared against the states the prior names — which is why `cost` before `prior` is
+`MISSING` and a list of the wrong length is `COST`.
+
+**K16, provenance.** v0's fence is absolute and stands untouched: a table that does not say
+`fitted` may not read a `fitted` parameter. Over it, the five meta-tables ask a second, transitive
+question. Every parameter carries the sources it descends from — its own, and those of every
+parameter its cell reads — and a meta-table admits a parameter only if that whole set lies within
+what the table could have declared for itself: `think` and `cost` admit `elicited` and `fitted`,
+`rate` and `depth_plus` `elicited`, `score` `data`. Refused by the table's own name. The attack
+this closes is a `data` number put in a `param` labelled `elicited` and read as the owner's Rate;
+a second `param` in between changes nothing, because provenance is not laundered by a hop.
+
+**K17, the census**, is the reading this kernel already had: a parameter counts once where it is
+declared, under its own source; a cell counts once under its table's source, written in place or
+read from a parameter. So `packs/ok/fitted_think_reads_elicited.py` is data 7, elicited 12,
+fitted 1 — the `elicited` parameter once as `elicited`, and the `fitted` cell that reads it once
+as `fitted`. The positions of a `cost` list count for nothing.
+
+`check` still ends by calling `declare`: the World's own rules — f's range, a negative cell, a
+negative Rate, (d, d⁺, N) — are written once, in `world.py`, and the surface does not repeat them
+under its own names (K15).
 
 ## Not here
 
@@ -199,4 +242,7 @@ no pruning by a threshold, no sampling, and no special case for a uniform prior 
 kernel. The kernel does not know what game it is playing — there is no feedback rule and no word
 list in `src/wald`. No clock: `time` is not imported anywhere here, and a thought costs the number
 the pack declared, never a number measured. No second decider: θ is an entry of one menu, read by
-the one `decide` (S8). No pack yet declares a think act — the surface syntax for it is 005b.
+the one `decide` (S8). Nothing in the surface lets a pack choose *when* to think: it supplies f,
+ops and r, and the comparison of them is the kernel's (SURFACE v0.1 §3). No form keys a Fraction
+or a Cost on anything but the count of live states, none updates either within an episode, and
+there is no second think act.

@@ -164,7 +164,7 @@ def build(spec):
                               + " at every execution, and it is not a component of Omega")
 
     meta = (spec.get("dplus", None), spec.get("fraction", None), spec.get("rate", None),
-            dict(spec.get("ops", None) or {}), spec.get("score", None))
+            dict(spec.get("ops", None) or {}), dict(spec.get("score", None) or {}))
     return World(prior, dict(T), acts, N, d, closed, bottom, dict(table_sources), components, meta)
 
 
@@ -186,20 +186,25 @@ def _rulings(world):
         raise Refused(COST, "a thought that takes fewer than no operations")
     if sources.get("cost", None) not in OWNED:
         raise Refused(COST, "the Cost is a meta-belief, so it is `elicited` or `fitted`")
-    # A Rate below zero the page does not name, only forbids (section 1: r in Q>=0). The reference
-    # refuses it in the line that refuses the Cost table (`meta_check.refuse_meta`), and the
-    # reference is the definition: this kernel takes its name, as it took PRICE under kit v0.1.
-    # Recorded in QUESTIONS.md as Q4, with the World that shows it.
-    if world.rate is None or world.rate < 0:
-        raise Refused(COST, "the owner is paid to think: r = " + str(world.rate))
     if sources.get("rate", None) != "elicited":
         raise Refused(RATE, "the Rate is the owner's exchange rate, so it is `elicited`")
+    # CHARTER v0.1 section 1 forbids a Rate below zero and names no clause for it (QUESTIONS.md
+    # Q4). The author has now answered: ERRATA queues RATE for CHARTER v0.2 and SURFACE v0.1 K15
+    # supplies it meanwhile, under the name the Rate's own row already uses.
+    if world.rate is None or world.rate < 0:
+        raise Refused(RATE, "the owner is paid to think: r = " + str(world.rate))
+    if sources.get("dplus", None) != "elicited":
+        raise Refused(TABLE_SOURCE, "Depth+ is the owner's, fixed by J11, so it is `elicited`"
+                      + " (SURFACE v0.1 K18)")
     if not (world.d == 1 and world.dplus == 2 and world.N >= 2):
         raise Refused(DEPTH_PLUS, "a World with a think act declares d = 1, d+ = 2 and N >= 2 (J11),"
                       + " not d = " + str(world.d) + ", d+ = " + str(world.dplus)
                       + ", N = " + str(world.N))
-    if "fitted" in (sources.get("fraction", None), sources.get("cost", None)) and world.score is None:
-        raise Refused(UNSCORED, "a fitted meta-table is fenced, and carries its held-out Score (J18)")
+    unscored = sorted(table for table in ("fraction", "cost")
+                      if sources.get(table, None) == "fitted" and table not in world.score)
+    if unscored:
+        raise Refused(UNSCORED, "the fitted " + unscored[0] + " is fenced, and carries its"
+                      + " held-out Score (J18, SURFACE v0.1 K14)")
 
 
 def declare(spec):
