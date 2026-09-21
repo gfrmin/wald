@@ -311,11 +311,6 @@ class Pack:
                               + " outside reads=" + repr(reads))
 
     # ---- the five declarations of SURFACE v0.1 (section 1)
-    def owned(self, node, tag, admits, name):
-        """A cell of a meta-table: K16's fence, then the cell itself. `admits` is what this table
-        could have said of itself, and a parameter may not carry in what it could not."""
-        return self.cells.owned(node, tag, admits, name)
-
     def say_depth_plus(self, call):
         """Depth+, written out although J11 fixes it at 2: a pack has no defaults (K13). Its one
         admissible source is `elicited` -- it is the owner's (K18)."""
@@ -325,7 +320,7 @@ class Pack:
             raise Refused(TABLE_SOURCE, where(call) + ": Depth+ is the owner's (J11), so it is"
                           + " `elicited`, not " + repr(tag))
         self.dplus_source = tag
-        self.dplus = self.owned(given["d"], tag, ("elicited",), TABLE_SOURCE)
+        self.dplus = self.cells.owned(given["d"], tag, ("elicited",), TABLE_SOURCE)
         self.cells.count(tag)
 
     def say_think(self, call):
@@ -336,7 +331,7 @@ class Pack:
             raise Refused(FRACTION, where(call) + ": a Fraction is a meta-belief -- `elicited` or"
                           + " `fitted`, not " + repr(tag))
         self.fraction_source = tag
-        self.fraction = self.owned(given["fraction"], tag, OWNED, FRACTION)
+        self.fraction = self.cells.owned(given["fraction"], tag, OWNED, FRACTION)
         self.cells.count(tag)
 
     def say_cost(self, call):
@@ -352,7 +347,7 @@ class Pack:
         if not isinstance(given["table"], ast.List):
             raise Refused(NOT_A_DECLARATION, where(call) + ": the Cost is a list, one cell for"
                           + " each count of live states, in order")
-        cells = [self.owned(e, tag, OWNED, COST) for e in given["table"].elts]
+        cells = [self.cells.owned(e, tag, OWNED, COST) for e in given["table"].elts]
         if len(cells) != len(states):
             raise Refused(COST, where(call) + ": " + str(len(cells)) + " cells for "
                           + str(len(states)) + " states")
@@ -368,7 +363,7 @@ class Pack:
             raise Refused(RATE, where(call) + ": the Rate is the owner's exchange rate, so it is"
                           + " `elicited`, not " + repr(tag))
         self.rate_source = tag
-        self.rate = self.owned(given["r"], tag, ("elicited",), RATE)
+        self.rate = self.cells.owned(given["r"], tag, ("elicited",), RATE)
         self.cells.count(tag)
 
     def say_score(self, call):
@@ -385,7 +380,7 @@ class Pack:
                           + " the Cost, not of " + repr(of))
         if of in self.scores:
             raise Refused(DUPLICATE, "the Score of the " + of + " is declared twice")
-        self.scores[of] = self.owned(given["value"], tag, ("data",), TABLE_SOURCE)
+        self.scores[of] = self.cells.owned(given["value"], tag, ("data",), TABLE_SOURCE)
         self.cells.count(tag)
 
     # ---- the seven kernel forms (section 4)
