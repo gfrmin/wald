@@ -10,9 +10,10 @@ import unittest
 from fractions import Fraction as F
 
 import _path
-from world_fixtures import APPX_K, APPX_T, SRC, act, spec
+from world_fixtures import APPX_K, APPX_T, act, spec
 from wald import belief as B
-from wald.decide import FLOOR, REFUSED, STRUCK_CAP, STRUCK_N, THINK, _cap, step, value
+from wald.decide import (FLOOR, REFUSED, STRUCK_CAP, STRUCK_N, THINK, _cap, decide,
+                         step, value)
 from wald.episode import Door, run
 from wald.refusals import Refused
 from wald.world import build, declare
@@ -144,25 +145,20 @@ class WhatTheStepReads(unittest.TestCase):
             self.assertEqual(act_, self.floor(w, n))
 
     def floor(self, w, n):
-        from wald.decide import decide
         return decide(root(w), w, min(w.d, n))
 
     def test_the_cap_does_not_read_the_depth_it_would_buy(self):
         """C19. A d+ of N is not a lawful pack (J11) -- it is a probe of the function, so it is
         built and not declared, exactly as the kit builds it."""
-        b = None
         hows = set()
         for dplus in (2, 3):
             w = build(dict(vector_A(N=3), dplus=dplus))
-            b = root(w)
-            hows.add(step(b, w, 3)[1])
+            hows.add(step(root(w), w, 3)[1])
         self.assertEqual(len(hows), 1)
 
     def test_theta_is_struck_where_the_menu_has_no_look_left(self):
-        w = declare(vector_A())
-        used = frozenset(["test"])
-        w2 = declare(dict(vector_A(), O={"test": act(APPX_K, F(1, 2))}))   # `once`
-        self.assertEqual(step(root(w2), w2, 2, used)[1], STRUCK_N)
+        w = declare(dict(vector_A(), O={"test": act(APPX_K, F(1, 2))}))    # `once`
+        self.assertEqual(step(root(w), w, 2, frozenset(["test"]))[1], STRUCK_N)
 
 
 class TheOperationCounter(unittest.TestCase):
