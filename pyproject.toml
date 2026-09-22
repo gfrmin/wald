@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wald"
+version = "0.1.0"
+description = "The kernel of a language for Bayesian decision-theoretic agents, judged against the signed pages of gfrmin/wald-charter."
+readme = "API.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.urls]
+Charter = "https://github.com/gfrmin/wald-charter"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["wald"]
