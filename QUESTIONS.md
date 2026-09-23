@@ -151,3 +151,61 @@ Fraction and Cost rows have, and I will move it.
 
 **What happened.** The author preferred `RATE`, and the §1 row is to get that half-sentence at
 CHARTER v0.2. Moved in brief 005b; no act of any World changed with the name, as expected.
+
+---
+
+## Q5 (brief 006). The brief puts ten names in `wald.__all__`; kit v0.10's ST1 allows six
+
+**Status: open. Work stopped on this point.** The branch stands on the kit's reading: all ten
+names are bound on `wald`, and `__all__` lists the six.
+
+**The brief.** `briefs/006-library.md` item 3: *"`src/wald/__init__.py` exports `load_pack`
+(= `surface.check`), `from_json`, `to_json`, `law` beside the existing six names; `__all__` lists
+all ten."*
+
+**The page.** `laws/INTERFACE.md`, the structural surface (kit v0.1): *"`wald.__all__` ⊆
+`{declare, run, Door, report, Display, refusals}`."* The kit v0.10 section says `import wald`
+*exposes* the six "and three more" (it then names four), and does not amend the first section.
+`kit_structural.py` at `kit-v0.10` still has `ALLOWED_TOP` = the six, and ST1 is `top <= ALLOWED_TOP`.
+`kit_library.py` L1 checks `hasattr(wald, n)` for the ten and never reads `__all__`.
+
+**The World that exposes it.** Not a World: the package itself. With `__all__` as the brief gives it,
+
+    FAIL ST1 wald.__all__ exports nothing beyond ['Display', 'Door', 'declare', 'refusals', 'report', 'run']   ['from_json', 'law', 'load_pack', 'to_json']
+    structural: 36/37 pass
+
+and the cage is red; with `__all__` the six, both kits are green.
+
+**What I did.** Nothing I chose: the kit is the judge, so the four names are bound on `wald`
+(which L1 asks) and left out of `__all__` (which ST1 asks). `src/wald/__init__.py` says so in a
+comment pointing here, and `tests/test_library.py` and `tests/test_violators.py` pin the six. If
+the author means the ten, `ALLOWED_TOP` wants the four more (and INTERFACE's first section the same
+words); it is a one-line change on my side.
+
+---
+
+## Q6 (brief 006). `WIRE` is named for "a reply out of order"; a malformed wire spec has no name
+
+**Status: open, a reading taken; the kit is green under any reading.**
+
+**The page.** `laws/INTERFACE.md`, kit v0.10: *"An unknown op answers `{"refused":"UNKNOWN_OP"}`;
+an unknown world id `{"refused":"UNKNOWN_WORLD"}`; a reply out of order is `WIRE`."* It says every
+rational on the wire is `"p/q"`, and names nothing for a spec that is not INTERFACE's dict — a
+rational written as a JSON number, a key the dict does not have, a count written `"2"`, a line
+that is not JSON. `kit_library.py` sends none of these.
+
+**The Worlds.** Appendix A as `kit_library.wire_spec` writes it, then one change each:
+
+```python
+spec["prior"]["sick"] = 0.2      # a float where a rational is meant
+spec["dplsu"] = 2                # a misspelt Depth+: ignored, it would declare a v0 World
+spec["N"] = "2"                  # a count as a string: `declare` crashed on it with TypeError
+```
+
+**What I did.** A float or a decimal string (`0.2`, `"0.2"`, `"1e-3"`) is `FLOAT`, SURFACE §5's
+name for "a decimal, where only exact rationals are meant", which is exactly the fault. Everything
+else the wire can get wrong — not JSON, not an object, a missing or unknown key, a JSON type
+INTERFACE does not give, a reply with the wrong id or key — is `WIRE`, read as the wire's refusal
+in general, of which a reply out of order is one case. An unknown key is refused rather than
+ignored because ignoring it turns a misspelt `dplus` into a v0 World without a word. If the author
+wants these apart, they are names in `src/wald/wire.py` and `tools/serve.py` and nowhere else.

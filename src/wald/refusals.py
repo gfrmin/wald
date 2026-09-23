@@ -52,3 +52,6 @@ DATA_HASH = "DATA_HASH"                  # the data file is not the one the pack
 UNDECLARED_READ = "UNDECLARED_READ"      # a kernel names or depends on what its act does not read
 MISSING = "MISSING"                      # a declaration a pack must make and did not
 UNREAD_PARAMETER = "UNREAD_PARAMETER"    # a declared parameter nobody reads (S3)
+
+# Of the wire (INTERFACE, kit v0.10). A decimal on the wire is FLOAT, as it is in a pack.
+WIRE = "WIRE"                      # a message or a spec that is not the protocol: out of order, not JSON, not the dict

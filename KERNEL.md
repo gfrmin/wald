@@ -1,12 +1,37 @@
 # KERNEL.md — every module, and its one reason to exist
 
-The kernel of CHARTER v0 and SURFACE v0, and of their amendments v0.1. Fifteen modules; if one of them cannot keep its line here, it should not
-exist. Standard library only, exact rationals only, and the list in `cage/lint_imports.py` is the
-whole of what `src/wald` may import.
+The kernel of CHARTER v0 and SURFACE v0, and of their amendments v0.1. Seventeen modules; if one
+of them cannot keep its line here, it should not exist. Standard library only, exact rationals
+only, and the list in `cage/lint_imports.py` is the whole of what `src/wald` may import.
+
+## The ten names a host gets
+
+`import wald` is the whole of the library (brief 006; `API.md` is the consumer's page). What a
+host may have from each name, and what it may not:
+
+| name | a host gets | a host does not get |
+|---|---|---|
+| `declare` | a sealed World, or `Refused` by name | a World built past a refusal |
+| `run` | a Result: acts, outcomes, status, prices and thought paid, S7's counts, E6's counts, the final Belief | the belief's weights: `final` is sealed |
+| `Door` | the class to subclass: `outcome` and `fire` are the host's | a way to mint an Obs other than `observe` |
+| `report` | a `Display` of a belief, and of E6's counts beside it | a number — the text is inert (S1) |
+| `Display` | `str()` | comparison, arithmetic, truth, hashing, length, indexing |
+| `refusals` | the exception classes and every refusal name | — |
+| `load_pack` | a pack's World spec, the pack parsed and never run | anything a pack could execute |
+| `from_json` | the wire's spec as INTERFACE's dict, rationals exact | a float: the wire refuses one as `FLOAT` |
+| `to_json` | a Result as text, rationals as `"p/q"`, the belief as `report`'s text | the belief as values: `wire.py` never opens a Belief |
+| `law` | the signed tags and kit tag this package was judged under | — |
+
+`__all__` lists the first six and not the four of brief 006, because kit v0.10's ST1 still allows
+only the six; all ten are bound on `wald`, which is what L1 asks (`QUESTIONS.md` Q5, open).
+
+Not among them: `push`, `condition`, `expect`, `decide`, `step`, `Belief`. A host never holds a
+probability and never chooses (S1, E5). The submodules are reachable, as anything in Python is;
+they are the kernel's, and nothing in `API.md` names them.
 
 | module | why it exists |
 |---|---|
-| `wald/__init__.py` | the host's whole surface: `declare`, `run`, `Door`, `report`, `Display`, `refusals` — and not the verbs, so a host never holds a probability and never chooses (S1, E5) |
+| `wald/__init__.py` | the host's whole surface, the ten names above — and not the verbs, so a host never holds a probability and never chooses (S1, E5) |
 | `wald/refusals.py` | `Refused` carries the **name** of the clause that refused a pack, so a refusal says which rule spoke; `WorldFalsified` and `ObsSpent` are the two things the kernel refuses at run time (S5, S2) |
 | `wald/dist.py` | the one place mass is checked to sum to one, so a row that does not (S4) cannot come into existence anywhere else |
 | `wald/kernels.py` | `Kernel`, and the only five ways to build one — point, table, mixture, product, composition — each preserving row sums by construction (S4) |
@@ -20,10 +45,13 @@ whole of what `src/wald` may import.
 | `wald/kit_adapter.py` | the `laws/INTERFACE.md` shim: plain dicts in, kernel types out, no logic of its own |
 | `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, the census of quantities by source, and v0.1's K16 provenance — what sources a cell descends from, so a meta-table cannot be handed one it could not have declared |
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
+| `wald/law.py` | the three tags this package was judged under, in one place, so a consumer can print which law its wald obeys and the kit can hold it to the lock |
+| `wald/wire.py` | `from_json` and `to_json`: the World spec and the Result as JSON text, every rational `"p/q"` both ways, read by position so a name spelled like a number stays a name — and the belief out only as `report`'s text (S1) |
 | `wald/surface.py` | SURFACE §1, §2 and §4: the nine declarations and the seven kernel forms, parsed with `ast` and never executed, elaborated to a World spec — and SURFACE v0.1's five more, `depth_plus`, `think`, `cost`, `rate` and `score`, which come together or not at all |
 | `tools/wald_check.py` | outside `src/`: `python3 tools/wald_check.py pack.py` — the write, check, repair loop for every pack author |
 | `tools/make_wordle_pack.py` | outside `src/`: writes a Wordle pack from one of the charter's word lists at a given depth, the game's feedback rule included — and, with `--think`, the five declarations of SURFACE v0.1 |
 | `tools/play_wordle.py` | outside `src/`: plays every answer of one or more packs through `wald.episode.run` behind a door that is the game, and writes the scoreboard — S7's four buckets, the thought charged and E6's two operation counts included |
+| `tools/serve.py` | outside `src/`: the wire as a process — JSON lines on stdin/stdout, the server the kernel's side of the Door and the client the world's; every client error refused by name, and all of the kernel's I/O is here |
 | `tools/curves.py` | outside `src/`: CHARTER E3 when thinking has a price — the five policy values along a grid of rates, exactly, from the kernel's own acts |
 
 ## The three things that exist exactly once
