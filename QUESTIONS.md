@@ -156,8 +156,8 @@ CHARTER v0.2. Moved in brief 005b; no act of any World changed with the name, as
 
 ## Q5 (brief 006). The brief puts ten names in `wald.__all__`; kit v0.10's ST1 allows six
 
-**Status: open. Work stopped on this point.** The branch stands on the kit's reading: all ten
-names are bound on `wald`, and `__all__` lists the six.
+**Status: answered at kit v0.11** (ST1 allows the ten and `plate`; brief 007 item 8). `__all__`
+lists all eleven. The record below is kept as it was.
 
 **The brief.** `briefs/006-library.md` item 3: *"`src/wald/__init__.py` exports `load_pack`
 (= `surface.check`), `from_json`, `to_json`, `law` beside the existing six names; `__all__` lists
@@ -209,3 +209,83 @@ INTERFACE does not give, a reply with the wrong id or key — is `WIRE`, read as
 in general, of which a reply out of order is one case. An unknown key is refused rather than
 ignored because ignoring it turns a misspelt `dplus` into a v0 World without a word. If the author
 wants these apart, they are names in `src/wald/wire.py` and `tools/serve.py` and nowhere else.
+
+---
+
+## Q7 (brief 007). `wald.law["charter"]`: L1 asks `charter-v0.1`, and CHARTER v0.2 is signed
+
+**Status: open. The kit's reading is taken; the kit is green.**
+
+**The page.** INTERFACE, kit v0.10: `law` is *"a dict naming the signed tags and the kit tag this
+package conforms to"*. Brief 007 implements `charter-v0.2`. `kit_library.py` L1 still asks
+`law["charter"] == "charter-v0.1"`.
+
+**The World that exposes it.** Not a World: `echo '{"op":"hello"}' | python3 tools/serve.py`
+prints `{"charter": "charter-v0.1", "surface": "surface-v0.1", "kit": "kit-v0.11"}` from a package
+that implements CHARTER v0.2.
+
+**What I did.** `law.CHARTER` stays `charter-v0.1` (L1) and `law.KIT` follows the lock. If the
+dict should name the newest charter this package conforms to, it is one string in
+`src/wald/law.py` and one in L1.
+
+---
+
+## Q8 (brief 007). The After-act's kernel "for every end": the page counts ending outcomes, `counts_check.refuse` does not
+
+**Status: open. The page's reading is taken; no kit World has both an ending outcome and an After-act.**
+
+**The page.** CHARTER v0.2 §3, After-act: *"taken once the episode has ended — the end being the
+terminal fired, or the pair (act, outcome) of the ending outcome reached — with kernel
+K_after(o | ω, e) reading the state and the end e, declared for every end"*. S12 refuses *"an
+after-act kernel [that] omits an end"* as AFTER.
+
+**The reference.** `counts_check.refuse` refuses AFTER unless `set(W["after"]["K"]) == set(W["T"])`,
+so it asks a kernel for each terminal, and refuses one keyed by an ending end `"end:k=o"`. Then
+`record_lik`, `diagnostic` and `plate_value` read `W["after"]["K"][t]` with `t = "end:k=o"` for an
+episode that ended on its ending outcome, and raise KeyError. `designs` and `design_dist` never cut
+a design at an ending outcome, although S15 says *"an ending outcome ending it"*.
+
+**The World.** Appendix A with a second `once` act `peek`, free, emitting `drop` (an ending
+outcome, u_end 0) or `go` with 1/2 each, and N = 2:
+
+```python
+W = counts_check.reliability_world([F(9, 10), F(3, 5)], [F(1, 2), F(1, 2)], F(-2))
+W["O"]["peek"] = {"K": {(l, g): {"drop": F(1, 2), "go": F(1, 2)} for l in ls for g in gs},
+                  "price": F(0), "once": True, "ends": {"drop"}, "u_end": {"drop": F(0)}}
+W["N"] = 2
+```
+
+The reference accepts it with no kernel for the end `end:peek=drop`. A plate on it that draws
+`drop` has no After-kernel to grade under. With `W["after"]["K"]["end:peek=drop"]` added, the
+reference refuses it AFTER.
+
+**What I did.** The page: `plated.build` asks for a kernel at every terminal and at every
+`end:k=o`, and refuses AFTER otherwise. `disclose.py` cuts a design at an ending outcome.
+`tests/test_counts.py` holds both halves. On a World with no ending outcome, which is every World
+the kit draws, the two readings are the same.
+
+---
+
+## Q9 (brief 007). The falsifying record of a report inside an episode has no end, and S13 checks it as a record
+
+**Status: open. The stand-in's reading is taken; the kit does not ship such a falsifier.**
+
+**The page.** J26: a report that falsifies the World *"during the episode or after it"* ends the
+plate, *"the falsifying record is kept beside them and travels with them"*. S13: *"Counts shipped
+from a plate that ended WORLD_FALSIFIED carry its falsifying record, which PLATE checks with them"*
+— checks that *"the declaration could have written every record itself … an ending outcome only as
+the last draw and then as the end, an after-report exactly when an After-act is declared"*.
+
+**The World.** Appendix A. Episode 1 reports `a1`, graded `a1`. In episode 2 the door reports `a3`,
+which `ask` cannot emit. The plate ends, and its falsifying record is the episode up to that
+report. There is no end, because no terminal was fired, and no after-report. `kit_counts._RefWald`
+writes `((("ask", "a3"),), None, None)`, and so do I. Shipped with the Counts into a refit, that
+record fails `counts_check.realisable` (its end is neither a terminal nor `end:k=o`, and appendix
+A declares an After-act), so the refit is refused PLATE. Every falsifier from inside an episode is
+unshippable, although J26 says it travels.
+
+**What I did.** The stand-in's record, and the reference's `realisable` applied to it unchanged, so
+such a shipment is refused PLATE. Also open under the same J26: whether `Plate.falsifier()` of a
+plate that started from shipped Counts and their falsifier should return that shipped falsifier.
+Mine returns only the plate's own; the shipped one is in the evidence of every episode's prior.
+
