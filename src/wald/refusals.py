@@ -36,7 +36,14 @@ FRACTION = "FRACTION"              # section 1: 0 <= f <= 1, source `elicited` o
 COST = "COST"                      # section 1: ops total over s = 1..|Omega| and >= 0 (S6)
 DEPTH_PLUS = "DEPTH_PLUS"          # J11: a World with theta declares d = 1, d+ = 2, N >= 2
 RATE = "RATE"                      # section 1: the Rate is `elicited` and r >= 0 (SURFACE v0.1 K15)
-UNSCORED = "UNSCORED"              # S10: a `fitted` meta-table carries its own Score (J18, K14)
+UNSCORED = "UNSCORED"              # S10: a `fitted` meta-table carries its own Score (J18, K14);
+                                   # v0.2 S14: shipped Counts carry their leave-one-out Score
+
+# Of CHARTER v0.2, what is learned between episodes. A dict that declares no Globals is a v0.1
+# World, and none of these names can speak to it.
+GLOBAL = "GLOBAL"                  # S11: no utility and no ending utility reads a Global
+AFTER = "AFTER"                    # S12: one After-act, a kernel for every end, reading the state and the end
+PLATE = "PLATE"                    # S13: shipped Counts hash to their digest and could have been written here
 
 # Of the surface (SURFACE section 5). A pack that breaks one rule is refused by that rule's name;
 # one that breaks several, by any one of theirs -- no order is promised (SURFACE K7).

@@ -4,6 +4,6 @@ consumer prints `law` to say which law its wald conforms to; the kit compares `K
 
 CHARTER = "charter-v0.1"
 SURFACE = "surface-v0.1"
-KIT = "kit-v0.10"
+KIT = "kit-v0.11"
 
 law = {"charter": CHARTER, "surface": SURFACE, "kit": KIT}

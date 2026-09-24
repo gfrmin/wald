@@ -77,14 +77,16 @@ def _total(table, omega, what):
                       + ", which is not in Omega")
 
 
-def build(spec):
+def build(spec, floor=True):
     """The World of section 1, out of a spec: the conversion, and the refusals that are the
     conversion itself -- a prior that is not one, a row that does not sum to 1, a table that is
     not a function on Omega.
 
     `declare` is this plus the rulings a pack must satisfy. The kit's shim stops here, because a
     kit World dict is a probe and not a pack: C19 of CHARTER v0.1 hands the kernel a d+ that J11
-    refuses in a pack, to prove that the cap does not read d+."""
+    refuses in a pack, to prove that the cap does not read d+. For the same reason a probe may pass
+    `floor=False`: kit v0.11's levels World has N = 0 and d = 1, where every decision is V_0
+    whatever d says. A pack never can -- `declare` rules on the floor, in its place in this list."""
     T = spec["T"]
     if not T:
         raise Refused(EMPTY_T, "a World with nothing to do")
@@ -118,7 +120,7 @@ def build(spec):
         acts[name] = Act(name, kernel, price, bool(s["once"]), dict(s["ends"]), sources)
 
     N, d = spec["N"], spec["d"]
-    if not 1 <= d <= N:
+    if floor and not 1 <= d <= N:
         raise Refused(DEPTH, "d = " + str(d) + " with N = " + str(N))
 
     closed = bool(spec.get("closed", False))
@@ -208,7 +210,11 @@ def _rulings(world):
 
 
 def declare(spec):
-    """Accept a pack, or refuse it by the name of the clause it breaks."""
+    """Accept a pack, or refuse it by the name of the clause it breaks. A dict that declares
+    `globals` is one of CHARTER v0.2 (`plated.py`); one that does not is a v0.1 World, as before."""
+    if "globals" in spec:
+        from .plated import declare as declare_plated
+        return declare_plated(spec)
     world = build(spec)
     _rulings(world)
     return world
