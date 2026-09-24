@@ -59,18 +59,23 @@ def refused(f, *args):
     return None
 
 
-class TheTenNames(unittest.TestCase):
+class TheElevenNames(unittest.TestCase):
     def test_all(self):
-        """Ten names on `wald` (kit L1); `__all__` the six of ST1 until QUESTIONS.md Q5 is answered."""
+        """Eleven names on `wald`, and `__all__` lists them (ST1 as of kit v0.11; Q5 answered)."""
         for name in ("declare", "run", "Door", "report", "Display", "refusals",
-                     "load_pack", "from_json", "to_json", "law"):
+                     "load_pack", "from_json", "to_json", "law", "plate"):
             self.assertTrue(hasattr(wald, name), name)
-        self.assertEqual(set(wald.__all__), {"declare", "run", "Door", "report", "Display", "refusals"})
+        self.assertEqual(set(wald.__all__), {"declare", "run", "Door", "report", "Display", "refusals",
+                                             "load_pack", "from_json", "to_json", "law", "plate"})
+
+    def test_plate_is_the_function_not_the_module(self):
+        import wald.plate                                   # noqa: F401 -- the submodule, again
+        self.assertTrue(callable(wald.plate))
 
     def test_law_is_the_dict_not_the_module(self):
         import wald.law                                     # noqa: F401 -- the submodule, again
         self.assertEqual(wald.law, {"charter": "charter-v0.1", "surface": "surface-v0.1",
-                                    "kit": "kit-v0.10"})
+                                    "kit": "kit-v0.11"})
 
     def test_law_kit_is_the_lock(self):
         with open(os.path.join(_path.ROOT, "cage", "charter.lock")) as f:

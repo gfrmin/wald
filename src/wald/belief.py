@@ -159,8 +159,14 @@ def _mass(measure):
 def condition(belief, world, obs):
     """b <- b|k,o, spending the token. A token that falsifies the World is not consumed: the
     episode ends before anything is done with it (S5), so only a surviving Obs is spent (S2)."""
+    return _condition(belief, world.O[obs.act].kernel, obs)
+
+
+def _condition(belief, kernel, obs):
+    """`condition` under a kernel named by the caller: the After-act's, which is not in the menu
+    and reads the end as well as the state (CHARTER v0.2 S12), so the plate hands it over."""
     check_unspent(obs)
-    posterior = _update(belief, world.O[obs.act].kernel, obs.value)
+    posterior = _update(belief, kernel, obs.value)
     spend(obs)
     return posterior
 

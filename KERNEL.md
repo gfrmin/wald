@@ -1,10 +1,10 @@
 # KERNEL.md — every module, and its one reason to exist
 
-The kernel of CHARTER v0 and SURFACE v0, and of their amendments v0.1. Seventeen modules; if one
+The kernel of CHARTER v0 and SURFACE v0, of their amendments v0.1, and of CHARTER v0.2. Twenty-one modules; if one
 of them cannot keep its line here, it should not exist. Standard library only, exact rationals
 only, and the list in `cage/lint_imports.py` is the whole of what `src/wald` may import.
 
-## The ten names a host gets
+## The eleven names a host gets
 
 `import wald` is the whole of the library (brief 006; `API.md` is the consumer's page). What a
 host may have from each name, and what it may not:
@@ -21,9 +21,9 @@ host may have from each name, and what it may not:
 | `from_json` | the wire's spec as INTERFACE's dict, rationals exact | a float: the wire refuses one as `FLOAT` |
 | `to_json` | a Result as text, rationals as `"p/q"`, the belief as `report`'s text | the belief as values: `wire.py` never opens a Belief |
 | `law` | the signed tags and kit tag this package was judged under | — |
+| `plate` | a Plate over a declared World: `run(door)` one episode at a time, its Counts, its falsifying record, S15's disclosure as a `Display` | P(Global \| Counts): Counts are facts a host may hold, the belief they give is not |
 
-`__all__` lists the first six and not the four of brief 006, because kit v0.10's ST1 still allows
-only the six; all ten are bound on `wald`, which is what L1 asks (`QUESTIONS.md` Q5, open).
+`__all__` lists all eleven (ST1 as of kit v0.11, which answered `QUESTIONS.md` Q5).
 
 Not among them: `push`, `condition`, `expect`, `decide`, `step`, `Belief`. A host never holds a
 probability and never chooses (S1, E5). The submodules are reachable, as anything in Python is;
@@ -31,7 +31,7 @@ they are the kernel's, and nothing in `API.md` names them.
 
 | module | why it exists |
 |---|---|
-| `wald/__init__.py` | the host's whole surface, the ten names above — and not the verbs, so a host never holds a probability and never chooses (S1, E5) |
+| `wald/__init__.py` | the host's whole surface, the eleven names above — and not the verbs, so a host never holds a probability and never chooses (S1, E5) |
 | `wald/refusals.py` | `Refused` carries the **name** of the clause that refused a pack, so a refusal says which rule spoke; `WorldFalsified` and `ObsSpent` are the two things the kernel refuses at run time (S5, S2) |
 | `wald/dist.py` | the one place mass is checked to sum to one, so a row that does not (S4) cannot come into existence anywhere else |
 | `wald/kernels.py` | `Kernel`, and the only five ways to build one — point, table, mixture, product, composition — each preserving row sums by construction (S4) |
@@ -43,6 +43,10 @@ they are the kernel's, and nothing in `API.md` names them.
 | `wald/same.py` | which acts a belief cannot tell apart, so the lookahead evaluates one of each group and J3 takes the first (E2) — it decides sameness and never a value |
 | `wald/episode.py` | `Door` and `run`: the episode of §2 in the page's order, the only place a think act is charged and its operations read, and — through `step` — the only place the floor `min(d, n)` is applied (E3) |
 | `wald/kit_adapter.py` | the `laws/INTERFACE.md` shim: plain dicts in, kernel types out, no logic of its own |
+| `wald/plated.py` | CHARTER v0.2's World: Ω as locals × Globals around a v0 World over the pairs (l, g), the Prior's two factors, the After-act, shipped Counts — and GLOBAL, AFTER, PLATE, UNSCORED |
+| `wald/counts.py` | the prior from Counts — `belief._update` once per distinct record, the record's likelihood to its count, so it is v0's update and not a second one — and the digest, S13's realisability, S14's Score and E7's lines |
+| `wald/disclose.py` | S15: the Global values no realisable design separates, and the classes of them that settle something an act can feel; it refuses nothing |
+| `wald/plate.py` | `Plate`: its Counts and its falsifying record and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) |
 | `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, the census of quantities by source, and v0.1's K16 provenance — what sources a cell descends from, so a meta-table cannot be handed one it could not have declared |
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
 | `wald/law.py` | the three tags this package was judged under, in one place, so a consumer can print which law its wald obeys and the kit can hold it to the lock |
@@ -277,9 +281,40 @@ All four Wordle packs are written by `tools/make_wordle_pack.py` and committed w
 the World holds is in the file. Regenerate them; do not edit them. The two adaptive packs differ
 from `d1.py` in five declarations at the end and in nothing else.
 
+## What is learned between episodes (CHARTER v0.2)
+
+A v0.2 state is the pair (l, g) and the v0 World is built over those pairs by `world.build`, so
+`decide`, `step`, the fast paths and the episode loop are untouched: `episode.run` became
+`_play(world, prior(world), door)`, and a plate calls `_play` with the prior its Counts give. A
+World with no Global is wrapped as one Global value, (), and plays as v0.1 (C21).
+
+**The prior from Counts** is P(Global | Counts) · P(local | Global). P(Global | Counts) is the
+declared P(Global) conditioned by `belief._update` — the one update — once per distinct record,
+under a likelihood that reads L(record | g)^count. L sums the local out over the draws and the
+after-report together, because they share the episode's local. A multiset has no order, so C22
+is not a property the code has to keep; it has no way to break it.
+
+**E7's predictive** conditions each Global's local on the history with the same `_update` and
+pushes the next kernel through it. That equals counts_check's ratio of sequence probabilities and
+keeps the update in one place.
+
+**How S15 scales.** A realisable design is a sequence of at most N acts, each `once` act at most
+once: up to Σ_{n≤N} |O|ⁿ of them. Under each, every sequence of outcomes is enumerated at every
+state of Ω, for every Global value, and for every end when an After-act is declared. That is
+|G| · |T| · Σ_n (|O| · |B|)ⁿ · |Ω|/|G| rows, exponential in N. The kit's largest are the router
+(16 states, 8 Global values, N = 1: 1.2 ms) and the cap (8 states, 10 designs at N = 2: 4.3 ms).
+Nothing is pruned, sampled or bounded. A World too large for it is a stop, not an approximation.
+
+**Two readings.** A dict that carries `d` is played by the adapter's `decide` as the episode
+plays it, `step(...)[0]`: INTERFACE says so at kit v0.7 and kit v0.11's E2 asks it, and `step` is
+still the only place `min(d, n)` is applied. And a probe may skip the floor (`build(spec,
+floor=False)`): kit v0.11's levels World has N = 0 with d = 1. `declare` rules on the floor in its
+old place, so no pack is refused by a different name than before.
+
 ## Not here
 
-No `host` form — withdrawn by SURFACE K4. No floats, no learning. No fast path that is not exact:
+No `host` form — withdrawn by SURFACE K4. No floats. No learning but Counts: no carried
+posterior, no log, no forgetting, no fitted parameter within a plate (S13). No fast path that is not exact:
 no pruning by a threshold, no sampling, and no special case for a uniform prior or a deterministic
 kernel. The kernel does not know what game it is playing — there is no feedback rule and no word
 list in `src/wald`. No clock: `time` is not imported anywhere here, and a thought costs the number
