@@ -13,4 +13,5 @@ git diff --quiet charter-v0 -- CHARTER.md || { echo "CHARTER.md differs from the
 git diff --quiet surface-v0 -- SURFACE.md || { echo "SURFACE.md differs from the signed page surface-v0"; exit 1; }
 git diff --quiet charter-v0.1 -- CHARTER-v0.1.md || { echo "CHARTER-v0.1.md differs from the signed page charter-v0.1"; exit 1; }
 git diff --quiet surface-v0.1 -- SURFACE-v0.1.md || { echo "SURFACE-v0.1.md differs from the signed page surface-v0.1"; exit 1; }
-echo "charter ok: $TAG at $SHA, signed by author@wald, pages unchanged since charter-v0, surface-v0, charter-v0.1, surface-v0.1"
+git diff --quiet charter-v0.2 -- CHARTER-v0.2.md || { echo "CHARTER-v0.2.md differs from the signed page charter-v0.2"; exit 1; }
+echo "charter ok: $TAG at $SHA, signed by author@wald, pages unchanged since charter-v0, surface-v0, charter-v0.1, surface-v0.1, charter-v0.2"
