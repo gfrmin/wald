@@ -42,7 +42,8 @@ class S1SingleExit(unittest.TestCase):
                 f()
 
     def test_the_verbs_are_not_exported_so_a_host_never_holds_a_probability(self):
-        self.assertEqual(set(wald.__all__), {"declare", "run", "Door", "report", "Display", "refusals"})
+        self.assertEqual(set(wald.__all__), {"declare", "run", "Door", "report", "Display", "refusals",
+                                             "load_pack", "from_json", "to_json", "law", "plate"})
         for verb in ("push", "condition", "expect", "decide", "Belief"):
             self.assertNotIn(verb, wald.__all__)
 
