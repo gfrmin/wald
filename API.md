@@ -4,9 +4,9 @@ The wheel built from this repository (`uv build`, or `python3 -m build`) install
 `wald`: standard library only, no dependencies, Python ≥ 3.12. It is judged by the kit of
 [gfrmin/wald-charter](https://github.com/gfrmin/wald-charter) and by nothing else.
 
-## The eleven names
+## The fourteen names
 
-`import wald` exposes these eleven, and `wald.__all__` lists them. Everything else under `wald.`
+`import wald` exposes these fourteen, and `wald.__all__` lists them. Everything else under `wald.`
 is the kernel's own and is not a host's to call.
 
 | name | what a host gets |
@@ -22,8 +22,12 @@ is the kernel's own and is not a host's to call.
 | `to_json(result, world)` | a Result as JSON: rationals as `"p/q"`, and the final belief as `report`'s text |
 | `law` | `{"charter", "surface", "kit"}`: the signed pages and the kit this package was judged under |
 | `plate(world)` | a Plate: `run(door)` plays one episode from the prior its Counts give, `counts()`, `falsifier()`, and `disclosure()` as a `Display` |
+| `digest(counts, falsifiers=())` | SURFACE v0.2 V2.13's digest of Counts and falsifying records: lowercase hex, the `sha256` a pack writes |
+| `score(world, counts, falsifiers=())` | V2.8's Score of them under `world`, as `declare` returned it, written as a pack writes the cell: `"p/q"`, or `"p"` when q is 1, in decimal digits however many |
+| `e7(world, counts)` | CHARTER v0.2 E7's lines as a `Display`: for every draw, by the history that led to it, the total variation between what Counts saw and the posterior predictive, each an exact rational |
 
-There is no `push`, `condition`, `expect` or `decide` among them. A host never holds a
+There is no `push`, `condition`, `expect` or `decide` among them. The Score comes back as text:
+it is a measurement a pack writes and the kernel checks, not a number a host acts on. A host never holds a
 probability, and only the kernel chooses (CHARTER S1, E5).
 
 ## The belief
@@ -81,6 +85,13 @@ translates newlines — for a CR anywhere, a coding declaration naming another e
 in any string, or an identifier outside ASCII is refused `NOT_A_DECLARATION` (V2.11).
 `python3 tools/wald_check.py pack.py` does that, and prints what the pack declares and learns.
 
+**Numbers of any length.** A cell, a multiplicity and a Score may have any number of digits: a
+Score of 300 graded records has tens of thousands. Python refuses to convert more than 4,300
+digits by default, and that limit is the whole interpreter's, so `wald` never lifts it:
+`load_pack` reads a long literal a piece at a time, and every number `wald` writes — a Score, an E7
+line, a belief in `report`, a rational on the wire — is written the same way. Your host's limit is
+the same after any call as before it.
+
 **The digest** (V2.13) is the SHA-256, lowercase hex, of the bytes of the compact JSON array
 `[counts, falsifiers]`: the records `[draws,end,after,n]` and the falsifying records
 `[draws,end,after]`, each array in ascending order of its elements' bytes, no whitespace, `null`
@@ -94,6 +105,78 @@ $ printf '%s' '[[[[["ask","a1"]],"say a1","a1",1]],[]]' | sha256sum
 c0cd11a6dbce579fb5a0ccc1e157fd2316358b4d31bcb47889e8072c50b53dba  -
 ```
 
+## Shipping a plate's Counts, with `wald` alone
+
+A host that played a plate can write the pack that ships its Counts to a refit or a sibling: the
+bare pack, then `counts(...)` from `Plate.counts()`, `falsifiers(...)` from `Plate.falsifier()`,
+the `sha256` from `wald.digest`, and `score(...)` from `wald.score`. Appendix A (SURFACE v0.2's
+appendix pack, `appendix_a.py` beside the script), three graded episodes, run, not typed
+(`tests/test_ship.py` runs this block as it stands here):
+
+```python
+import wald
+
+with open("appendix_a.py", encoding="utf-8", newline="") as f:     # read as written (V2.11)
+    bare = f.read()
+world = wald.declare(wald.load_pack(bare, "."))
+
+
+class Question(wald.Door):
+    """One episode: the true answer, and what `ask` reports of it. The grade reveals the answer."""
+
+    def __init__(self, answer, report):
+        self.answer, self.report = answer, report
+
+    def outcome(self, act):
+        return self.report if act == "ask" else self.answer
+
+    def fire(self, act):
+        pass
+
+
+p = wald.plate(world)
+for answer, report in [("a1", "a1"), ("a2", "a2"), ("a1", "a2")]:
+    p.run(Question(answer, report))
+
+counts = p.counts()
+falsifiers = [p.falsifier()] if p.falsifier() is not None else []
+
+
+def record(draws, end, after):
+    return "[" + repr([list(d) for d in draws]) + ", " + repr(end) + ", " + repr(after)
+
+
+lines = ["counts([" + ", ".join(record(*r) + ", " + str(n) + "]" for r, n in counts.items()) + "], "
+         + "sha256=" + repr(wald.digest(counts, falsifiers)) + ', source="data")']
+if falsifiers:
+    lines.append("falsifiers([" + ", ".join(record(*f) + "]" for f in falsifiers) + "])")
+lines.append("score(" + wald.score(world, counts, falsifiers) + ', of="counts", source="data")')
+shipped = bare + "\n".join(lines) + "\n"
+
+refit = wald.declare(wald.load_pack(shipped, "."))   # the digest and the Score are checked here
+print(shipped)
+print(wald.e7(world, counts))
+```
+
+It prints the bare pack, then these three lines — two right grades and one wrong, whose Score is
+CHARTER v0.2 appendix I's 1125/100672 — and E7:
+
+```
+counts([[[['ask', 'a1']], 'say a1', 'a1', 1], [[['ask', 'a2']], 'say a2', 'a2', 1], [[['ask', 'a2']], 'say a2', 'a1', 1]], sha256='2f4a30a562cd94f39e49a198a36f480ef5df7383aedec2a4e32500deee633976', source="data")
+score(1125/100672, of="counts", source="data")
+
+E7: total variation between each draw's outcomes in Counts and its posterior predictive, by the history that led to it
+after the start: ask 1/6
+after ask=a1, then say a1: grade 73/250
+after ask=a2, then say a2: grade 26/125
+```
+
+`repr` writes each name as a Python string literal the pack reads back as the same name, and
+`None` for an absent end or after-report. A plate that was falsified ships its falsifying record in
+`falsifiers(...)`, and its Score scores it too. The refit declares only if it could have written
+every record itself and all of them together have positive probability under some Global value
+(CHARTER v0.2 S13); otherwise it is refused `PLATE`.
+
 ## The wire
 
 `python3 tools/serve.py` speaks JSON lines on stdin and stdout: one object per line, each way.
@@ -106,7 +189,7 @@ A session on CHARTER v0.1's Appendix B, run, not typed (`>` the client, `<` the 
 
 ```
 > {"op": "hello"}
-< {"law": {"charter": "charter-v0.2", "surface": "surface-v0.2", "kit": "kit-v0.12"}}
+< {"law": {"charter": "charter-v0.2", "surface": "surface-v0.2", "kit": "kit-v0.13"}}
 > {"op": "declare", "spec": {"prior": {"sick": "1/5", "well": "4/5"}, "T": {"treat": {"sick": "0", "well": "-2"}, "leave": {"sick": "-10", "well": "0"}}, "O": {"test": {"K": {"sick": {"+": "9/10", "-": "1/10"}, "well": {"+": "1/5", "-": "4/5"}}, "price": "1/2", "once": true, "ends": {}}, "scan": {"K": {"sick": {"y": "9/10", "n": "1/10"}, "well": {"y": "2/5", "n": "3/5"}}, "price": "1/5", "once": true, "ends": {}}}, "N": 2, "d": 1, "dplus": 2, "fraction": "1/2", "rate": "1/1000", "ops": {"1": "100", "2": "200"}, "closed": true, "table_sources": {"prior": "data", "utility": "elicited", "price": "elicited", "horizon": "elicited", "depth": "elicited", "kernels": {"test": ["data"], "scan": ["data"]}, "dplus": "elicited", "fraction": "elicited", "cost": "elicited", "rate": "elicited"}}}
 < {"ok": true, "world": 1}
 > {"op": "run", "world": 1}
