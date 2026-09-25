@@ -66,7 +66,7 @@ class Run:
 
     def __init__(self, path, quiet=False, curves=None):
         self.path = path
-        text = path.read_text(encoding="utf-8")
+        text = path.read_bytes().decode("utf-8")        # as written: V2.11
         self.spec = check(text, data_dir=str(path.parent))
         self.quantities = census(text, data_dir=str(path.parent))
         self.curves = curves

@@ -80,7 +80,7 @@ class Tree:
     """One pack, and the acts the kernel plays in it."""
 
     def __init__(self, path):
-        text = path.read_text(encoding="utf-8")
+        text = path.read_bytes().decode("utf-8")        # as written: V2.11
         self.spec = check(text, data_dir=str(path.parent))
         self.world = declare(self.spec)
         self.words = tuple(self.spec["prior"])

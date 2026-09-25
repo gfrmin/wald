@@ -31,7 +31,8 @@ class Plate:
         if self._falsifier is not None:
             raise WorldFalsified("this plate ended WORLD_FALSIFIED; its Counts stand and it runs no more")
         plated = self._plated
-        evidence = self._counts + (Counter([plated.falsifier]) if plated.falsifier else Counter())
+        # The prior conditions on the Counts and on every falsifying record shipped with them (J26)
+        evidence = self._counts + Counter(plated.falsifiers)
         r = _play(plated.world, C.episode_prior(plated, evidence), door)
         if r.status == WORLD_FALSIFIED:
             self._falsifier = r.record
@@ -55,7 +56,8 @@ class Plate:
         return Counter(self._counts)
 
     def falsifier(self):
-        """The record that falsified this plate, or None."""
+        """The record that falsified this plate, or None. The falsifying records it was shipped
+        are its declaration's, and in the evidence of every episode's prior."""
         return self._falsifier
 
     def disclosure(self):

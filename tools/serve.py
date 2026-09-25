@@ -91,11 +91,14 @@ class Session:
     def __init__(self, inp, out):
         self.wire = Wire(inp, out)
         self.worlds = {}
+        self.plated = set()
         self.ids = itertools.count(1)
 
     def declared(self, spec):
         wid = len(self.worlds) + 1
         self.worlds[wid] = wald.declare(spec)
+        if "globals" in spec:
+            self.plated.add(wid)        # CHARTER v0.2's dict: SURFACE v0.2's packs load to one
         return {"ok": True, "world": wid}
 
     def op_hello(self, msg):
@@ -114,6 +117,9 @@ class Session:
         wid = msg.get("world")
         if type(wid) is not int or wid not in self.worlds:
             return {"refused": UNKNOWN_WORLD, "detail": "no world " + json.dumps(wid) + " in this session"}
+        if wid in self.plated:
+            raise Refused(WIRE, "world " + str(wid) + " declares what is learned between episodes:"
+                          + " it runs on a plate (wald.plate), and the wire has no plate op")
         world = self.worlds[wid]
         result = wald.run(world, WireDoor(self.wire, self.ids))
         return {"result": json.loads(wald.to_json(result, world))}

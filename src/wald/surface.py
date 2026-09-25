@@ -15,26 +15,31 @@ from fractions import Fraction
 
 from .cells import Cells, where
 from .datafile import rows as data_rows
-from .refusals import (COST, DEPTH, DEPTH_PLUS, DUPLICATE, FRACTION, KERNEL_ROW, MISSING,
+from .learned import LEARNED, Learned
+from .refusals import (COST, DEPTH, DEPTH_PLUS, DUPLICATE, FRACTION, GLOBAL, KERNEL_ROW, MISSING,
                        NOT_A_DECLARATION, RATE, SYNTAX, TABLE_SHAPE, TABLE_SOURCE, UNDECLARED_READ,
                        UNKNOWN_NAME, UNSCORED, Refused)
+from .text import refuse_surrogates, refuse_unlawful
 from .world import declare
 
 DECLARATIONS = ("world", "horizon", "depth", "space", "param", "prior", "utility", "price", "act",
-                "depth_plus", "think", "cost", "rate", "score")
+                "depth_plus", "think", "cost", "rate", "score") + LEARNED
 ONCE = ("world", "horizon", "depth", "space", "prior", "utility", "price")
 # SURFACE v0.1: the think act's four, each at most once and all four or none. `score` is not one
 # of them -- there are two tables that can be fitted, so there can be two scores.
 META = ("depth_plus", "think", "cost", "rate")
 OWNED = ("elicited", "fitted")      # a meta-belief is the owner's number or a fit, and nothing else
 SCORED = ("fraction", "cost")       # the two meta-tables a Score can be of (K14)
+COUNTS = "counts"                   # and SURFACE v0.2's Score, of shipped Counts (V2.8)
 KERNEL_FORMS = ("table", "by", "point", "data", "mixture", "product", "compose")
 
 
-class Pack:
+class Pack(Learned):
     """A pack, read. Every refusal below names the rule of the page that refused it."""
 
     def __init__(self, text, data_dir):
+        refuse_unlawful(text)               # SURFACE v0.2 V2.11: the text, before it is parsed
+        self.text = text
         self.data_dir = data_dir
         self.cells = Cells()
         self.said = set()
@@ -49,10 +54,12 @@ class Pack:
         self.closed = False
         self.bottom = None
         self.scores = {}
+        self.start_learning()
         try:
             tree = ast.parse(text)
-        except SyntaxError as e:
+        except (SyntaxError, ValueError) as e:
             raise Refused(SYNTAX, str(e))
+        refuse_surrogates(tree, text)
         for statement in tree.body:
             self.declaration(statement)
 
@@ -67,6 +74,8 @@ class Pack:
         said = call.func.id
         if (said in ONCE or said in META) and said in self.said:
             raise Refused(DUPLICATE, said + " is declared twice")
+        if said in LEARNED and said in self.said:
+            raise Refused(DUPLICATE, "[V2.0] " + said + " is declared twice")
         self.said.add(said)
         # One `say_` per name in DECLARATIONS, and a statement that is not one of those names
         # never reaches here: the grammar is that tuple, and nothing else can be dispatched.
@@ -114,6 +123,9 @@ class Pack:
 
     def states(self):
         if self.prior is None:
+            if self.prior_g is not None:
+                raise Refused(MISSING, "[V2.3] local_prior: with Globals, the states are what"
+                              + " P(Global) and P(local | Global) together give")
             raise Refused(MISSING, "prior: every table over states comes after the prior,"
                           + " which is what says the states are these")
         return list(self.prior)
@@ -180,7 +192,12 @@ class Pack:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "by":
             given = self.arguments(node, ("component", "rows"), (), ("component", "rows"))
             component = self.cells.plain(given["component"])
-            return self.spread(component, self.table(given["rows"], tag, depth), node)
+            spread = self.spread(component, self.table(given["rows"], tag, depth), node)
+            if self.paying and self.globals_ and component in self.globals_:
+                # CHARTER v0.2 S11 is one of form: a utility written over a Global
+                raise Refused(GLOBAL, "[V2.10] " + where(node) + ": a utility written by("
+                              + repr(component) + "), which is a Global component")
+            return spread
         return self.table(node, tag, depth)
 
     # ---- the nine declarations (section 2)
@@ -231,6 +248,8 @@ class Pack:
 
     def say_prior(self, call):
         self.components()   # the prior's keys are states of the space, so the space is named first
+        if self.globals_ is not None:
+            return self.say_global_prior(call)      # SURFACE v0.2 V2.2: P(Global)
         given = self.arguments(call, ("table",), ("source",), ("table",))
         self.prior_source = self.source(given, call)
         if not isinstance(given["table"], ast.Dict):
@@ -239,6 +258,13 @@ class Pack:
         self.prior = self.table(given["table"], self.prior_source, 1)
 
     def say_utility(self, call):
+        self.paying = True
+        try:
+            self.say_what_pays(call)
+        finally:
+            self.paying = False
+
+    def say_what_pays(self, call):
         self.states()
         given = self.arguments(call, ("terminal",), ("ending", "source"), ("terminal",))
         tag = self.source(given, call)
@@ -358,9 +384,11 @@ class Pack:
         if tag != "data":
             raise Refused(TABLE_SOURCE, where(call) + ": a Score is measured, so it is `data`,"
                           + " not " + repr(tag))
+        if of == COUNTS:
+            return self.say_counts_score(given, tag)
         if of not in SCORED:
-            raise Refused(NOT_A_DECLARATION, where(call) + ": a Score is of the Fraction or of"
-                          + " the Cost, not of " + repr(of))
+            raise Refused(NOT_A_DECLARATION, where(call) + ": a Score is of the Fraction, of"
+                          + " the Cost or of the Counts, not of " + repr(of))
         if of in self.scores:
             raise Refused(DUPLICATE, "the Score of the " + of + " is declared twice")
         self.scores[of] = self.cells.owned(given["value"], tag, ("data",), TABLE_SOURCE)
@@ -460,6 +488,14 @@ class Pack:
 
     # ---- the World spec of laws/INTERFACE.md
     def spec(self):
+        """The World spec, or -- for a pack of SURFACE v0.2 -- CHARTER v0.2's dict (`learned.py`)."""
+        if self.learns():
+            return self.learned_spec()
+        return self.joint()
+
+    def joint(self):
+        """The World over Omega's states as SURFACE v0 spells them, judged by v0's and v0.1's
+        rules. For a v0.2 pack it is the joint World the pairs (local, Global) are read from."""
         for said in ONCE:
             if said not in self.said:
                 raise Refused(MISSING, said + " is not declared")
@@ -529,7 +565,9 @@ class Pack:
 
 
 def check(text, data_dir="."):
-    """A pack, read and elaborated to the World spec of laws/INTERFACE.md, or Refused by name."""
+    """A pack, read and elaborated to the World spec of laws/INTERFACE.md -- CHARTER v0.2's dict
+    for a pack that declares what is learned -- or Refused by name. `text` is the pack as its
+    bytes are written, decoded as UTF-8 with no newline translation (V2.11)."""
     return Pack(text, data_dir).spec()
 
 

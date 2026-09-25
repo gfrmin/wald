@@ -12,6 +12,7 @@ import wald
 from wald import counts as C
 from wald import disclose as D
 from wald import plated as P
+from wald.digest import digest
 from wald.belief import _weights
 from wald.decide import value
 from wald.refusals import AFTER, GLOBAL, PLATE, UNSCORED, Refused, WorldFalsified
@@ -142,11 +143,10 @@ class AppendixK(unittest.TestCase):
             self.skipTest("the charter is not fetched")
         good = Counter({R.rec("a1", "a1", "say a1"): 16, R.rec("a2", "a2", "say a2"): 4})
         fals = R.rec("a2", "a1", "say a2")
-        for falsifier, want in ((None, "say a2"), (fals, "abstain")):
+        for falsifiers, want in (((), "say a2"), ((fals,), "abstain")):
             W = R.falsified_refit_world()
-            W.update(counts=good, counts_sha=C.counts_sha(good), score=R.loo_score(W, good))
-            if falsifier:
-                W["falsifier"] = falsifier
+            W.update(counts=good, counts_sha=digest(good, falsifiers),
+                     score=R.loo_score(W, good, falsifiers), falsifiers=list(falsifiers))
             r = wald.plate(wald.declare(pack(W))).run(Script("a2", "a2"))
             self.assertEqual(r.acts, ("ask", want))
 
@@ -203,12 +203,12 @@ class Refusals(unittest.TestCase):
         W = reliability()
         W.update(counts=one, counts_sha="0" * 64, score=F(1))
         self.refused(W, PLATE)
-        W.update(counts_sha=C.counts_sha(one))
+        W.update(counts_sha=digest(one))
         self.refused(W, UNSCORED)
         W["score"] = C.score(P.build(pack(W)), one)
         wald.declare(pack(W))
         two = Counter([((("ask", "a1"), ("ask", "a1")), "say a1", "a1")])      # N = 1
-        W.update(counts=two, counts_sha=C.counts_sha(two))
+        W.update(counts=two, counts_sha=digest(two))
         self.refused(W, PLATE)
 
     def test_the_score_of_appendix_I(self):

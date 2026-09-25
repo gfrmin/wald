@@ -1,7 +1,7 @@
 # KERNEL.md — every module, and its one reason to exist
 
-The kernel of CHARTER v0 and SURFACE v0, of their amendments v0.1, and of CHARTER v0.2. Twenty-one modules; if one
-of them cannot keep its line here, it should not exist. Standard library only, exact rationals
+The kernel of CHARTER v0 and SURFACE v0, of their amendments v0.1, and of their amendments v0.2. Twenty-four
+modules; if one of them cannot keep its line here, it should not exist. Standard library only, exact rationals
 only, and the list in `cage/lint_imports.py` is the whole of what `src/wald` may import.
 
 ## The eleven names a host gets
@@ -43,8 +43,9 @@ they are the kernel's, and nothing in `API.md` names them.
 | `wald/same.py` | which acts a belief cannot tell apart, so the lookahead evaluates one of each group and J3 takes the first (E2) — it decides sameness and never a value |
 | `wald/episode.py` | `Door` and `run`: the episode of §2 in the page's order, the only place a think act is charged and its operations read, and — through `step` — the only place the floor `min(d, n)` is applied (E3) |
 | `wald/kit_adapter.py` | the `laws/INTERFACE.md` shim: plain dicts in, kernel types out, no logic of its own |
-| `wald/plated.py` | CHARTER v0.2's World: Ω as locals × Globals around a v0 World over the pairs (l, g), the Prior's two factors, the After-act, shipped Counts — and GLOBAL, AFTER, PLATE, UNSCORED |
-| `wald/counts.py` | the prior from Counts — `belief._update` once per distinct record, the record's likelihood to its count, so it is v0's update and not a second one — and the digest, S13's realisability, S14's Score and E7's lines |
+| `wald/plated.py` | CHARTER v0.2's World: Ω as locals × Globals around a v0 World over the pairs (l, g), the Prior's two factors, the After-act, shipped Counts and their falsifying records — and GLOBAL, AFTER, PLATE, UNSCORED |
+| `wald/counts.py` | the prior from Counts — `belief._update` once per distinct record, the record's likelihood to its count, so it is v0's update and not a second one — S13's realisability, falsifying records as V2.7 has them, **S14's Score as V2.8 corrects it** (a term for every copy of every record *and every falsifying record*) and E7's lines |
+| `wald/digest.py` | SURFACE v0.2 V2.13: the digest defined by its bytes — V2.13's escape table as a declared table, row for row, the first matching row deciding, so DEL is escaped and `/` is not because the page says so and not because a JSON library does |
 | `wald/disclose.py` | S15: the Global values no realisable design separates, and the classes of them that settle something an act can feel; it refuses nothing |
 | `wald/plate.py` | `Plate`: its Counts and its falsifying record and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) |
 | `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, the census of quantities by source, and v0.1's K16 provenance — what sources a cell descends from, so a meta-table cannot be handed one it could not have declared |
@@ -52,10 +53,12 @@ they are the kernel's, and nothing in `API.md` names them.
 | `wald/law.py` | the three tags this package was judged under, in one place, so a consumer can print which law its wald obeys and the kit can hold it to the lock |
 | `wald/wire.py` | `from_json` and `to_json`: the World spec and the Result as JSON text, every rational `"p/q"` both ways, read by position so a name spelled like a number stays a name — and the belief out only as `report`'s text (S1) |
 | `wald/surface.py` | SURFACE §1, §2 and §4: the nine declarations and the seven kernel forms, parsed with `ast` and never executed, elaborated to a World spec — and SURFACE v0.1's five more, `depth_plus`, `think`, `cost`, `rate` and `score`, which come together or not at all |
-| `tools/wald_check.py` | outside `src/`: `python3 tools/wald_check.py pack.py` — the write, check, repair loop for every pack author |
+| `wald/learned.py` | **the v0.2 reader**: SURFACE v0.2's `globals`, the prior as P(Global), `local_prior`, `after` with its `reads`, `counts`, `falsifiers` and `score(of="counts")`, read into CHARTER v0.2's dict — the joint World judged as any pack's, then the dict judged by `plated.declare` |
+| `wald/text.py` | SURFACE v0.2 V2.11: a pack's text before it is parsed — UTF-8 with LF, no coding declaration but UTF-8, no surrogate, no identifier outside ASCII — so that one pack's bytes are one pack to every reader |
+| `tools/wald_check.py` | outside `src/`: `python3 tools/wald_check.py pack.py` — the write, check, repair loop for every pack author; it reads the pack's bytes as written (V2.11) |
 | `tools/make_wordle_pack.py` | outside `src/`: writes a Wordle pack from one of the charter's word lists at a given depth, the game's feedback rule included — and, with `--think`, the five declarations of SURFACE v0.1 |
 | `tools/play_wordle.py` | outside `src/`: plays every answer of one or more packs through `wald.episode.run` behind a door that is the game, and writes the scoreboard — S7's four buckets, the thought charged and E6's two operation counts included |
-| `tools/serve.py` | outside `src/`: the wire as a process — JSON lines on stdin/stdout, the server the kernel's side of the Door and the client the world's; every client error refused by name, and all of the kernel's I/O is here |
+| `tools/serve.py` | outside `src/`: the wire as a process — JSON lines on stdin/stdout, the server the kernel's side of the Door and the client the world's; every client error refused by name, and all of the kernel's I/O is here; a World of CHARTER v0.2 loads over it but does not run, because the wire has no plate op |
 | `tools/curves.py` | outside `src/`: CHARTER E3 when thinking has a price — the five policy values along a grid of rates, exactly, from the kernel's own acts |
 
 ## The three things that exist exactly once
@@ -310,6 +313,36 @@ plays it, `step(...)[0]`: INTERFACE says so at kit v0.7 and kit v0.11's E2 asks 
 still the only place `min(d, n)` is applied. And a probe may skip the floor (`build(spec,
 floor=False)`): kit v0.11's levels World has N = 0 with d = 1. `declare` rules on the floor in its
 old place, so no pack is refused by a different name than before.
+
+## Declaring what is learned (SURFACE v0.2)
+
+A pack that writes any of `globals`, `local_prior`, `after`, `counts`, `falsifiers` or `score(of="counts")` is
+SURFACE v0.2's, and `load_pack` returns CHARTER v0.2's dict (`laws/model.py`'s World) instead of a v0.1 spec. It is
+read in two steps, as the reference reads it. First the joint World over Omega's states *as SURFACE v0 spells them*
+— the states being the pairs P(Global) and P(local | Global) give positive mass (V2.4) — goes through `surface.Pack.joint`,
+the same code as every v0.1 pack, so every v0 and v0.1 rule speaks under its old name and |Ω|, `by(...)` and `cost`
+all mean that support. Then each state is split into `(local, Global)` and the dict goes to `plated.declare` for
+GLOBAL, AFTER, PLATE and UNSCORED. The After-act's price is taken out of `price` for the first step and put back for
+the second: it is not in the menu.
+
+**The dict carries no sources.** The kit v0.11 dict has no `table_sources`, and kit v0.12's R3 declares exactly
+that dict, so `plated.build` asks for none when there are none (`world.build(..., sourced=False)`) and still rules
+on everything else. The surface has judged every source already; a host that writes the dict by hand and wants its
+sources ruled on passes `table_sources`, which are then checked as any spec's.
+
+**The text is judged before the tree.** Python folds `ſcore` to `score` while parsing, and raises `ValueError`, not
+`SyntaxError`, on a full-width `Ｎｏｎｅ`; so `text.py` finds identifiers in the text with a lexer that skips strings
+and comments, and the tree is asked only about escaped surrogates — and only when the text has a `\u` or `\U`
+escape at all, which no Wordle pack does (walking the 200-word pack's tree cost 0.4 s).
+
+**The digest is the page's table.** `digest.py` writes V2.13's rows as a tuple and encodes from them; the five
+vectors of the page reproduce byte for byte, and 3,000 fuzzed record sets agree with `counts_check.counts_sha`.
+
+**Where I part from the reference**, always by the page, each refusal naming its entry: the After-act's kernel is a
+kernel and its price a price (`QUESTIONS.md` Q10); a Global value the prior does not name is not in Omega (Q11);
+`score(of="counts")` needs Counts in every pack (Q12); `falsifiers` may precede `counts` (Q13); an end is reached by
+its draws (Q14). `tests/test_surface_differential.py` runs 13,445 mutations of the corpus against the reference and
+fails on any divergence those entries do not record.
 
 ## Not here
 
