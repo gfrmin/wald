@@ -19,7 +19,7 @@ from .learned import LEARNED, Learned
 from .refusals import (COST, DEPTH, DEPTH_PLUS, DUPLICATE, FRACTION, GLOBAL, KERNEL_ROW, MISSING,
                        NOT_A_DECLARATION, RATE, SYNTAX, TABLE_SHAPE, TABLE_SOURCE, UNDECLARED_READ,
                        UNKNOWN_NAME, UNSCORED, Refused)
-from .text import refuse_surrogates, refuse_unlawful
+from .text import refuse_surrogates, refuse_unlawful, swap_long
 from .world import declare
 
 DECLARATIONS = ("world", "horizon", "depth", "space", "param", "prior", "utility", "price", "act",
@@ -39,9 +39,11 @@ class Pack(Learned):
 
     def __init__(self, text, data_dir):
         refuse_unlawful(text)               # SURFACE v0.2 V2.11: the text, before it is parsed
+        text, longs = swap_long(text)       # and a literal too long for Python to read, named
         self.text = text
         self.data_dir = data_dir
         self.cells = Cells()
+        self.cells.longs = longs
         self.said = set()
         self.space = None
         self.prior = None

@@ -11,6 +11,7 @@ This is exponential in N: every design is enumerated, and under each every seque
 at every state. It is exact and it is not approximated (KERNEL.md)."""
 from fractions import Fraction
 
+from .digits import rational
 from .display import render
 from .episode import ending
 
@@ -111,7 +112,7 @@ def text(plated):
         lines.append("nothing this World declares as a Global can be learned")
     for c in cs:
         lines.append("no plate can tell these apart, and they disagree about what an act can feel; the declared"
-                     " prior settles it forever: " + ", ".join(str(g) + " " + str(p) for g, p in c.items()))
+                     " prior settles it forever: " + ", ".join(str(g) + " " + rational(p) for g, p in c.items()))
     if not cs:
         lines.append("no class of inseparable Global values settles anything an act can feel")
     return "\n".join(lines)

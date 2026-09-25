@@ -15,6 +15,7 @@ import ast
 import keyword
 from fractions import Fraction
 
+from .digits import long_int
 from .refusals import (BAD_NAME, DIVISION_BY_ZERO, DUPLICATE, FLOAT, NOT_A_DECLARATION,
                        TABLE_SOURCE, UNHOUSED_NUMERAL, UNKNOWN_NAME, UNREAD_PARAMETER, Refused)
 
@@ -37,6 +38,7 @@ class Cells:
         self.provenance = {}
         self.read = set()
         self.census = {tag: 0 for tag in TAGS}
+        self.longs = {}         # {name: digits}: the literals too long to parse (text.swap_long)
 
     def count(self, tag, n=1):
         """A quantity, counted once however it is written: a cell, a parameter, a mixture
@@ -51,6 +53,9 @@ class Cells:
             if isinstance(node.value, (int, float, complex)):
                 raise Refused(UNHOUSED_NUMERAL, where(node) + ": " + repr(node.value)
                               + " is not in a table")
+        if isinstance(node, ast.Name) and node.id in self.longs:
+            raise Refused(UNHOUSED_NUMERAL, where(node) + ": a number of "
+                          + str(len(self.longs[node.id])) + " digits is not in a table")
         if isinstance(node, ast.List):
             return [self.plain(e) for e in node.elts]
         if isinstance(node, ast.Tuple):
@@ -77,6 +82,8 @@ class Cells:
                               + " is not exact; write a ratio of integers")
             if isinstance(node.value, int):
                 return Fraction(node.value)
+        if isinstance(node, ast.Name) and node.id in self.longs:
+            return Fraction(long_int(self.longs[node.id]))
         if isinstance(node, ast.Name):
             if node.id not in self.params:
                 raise Refused(UNKNOWN_NAME, where(node) + ": " + node.id

@@ -9,6 +9,7 @@ from fractions import Fraction
 
 from .belief import _counted, condition, prior
 from .decide import REFUSED, STRUCK_CAP, STRUCK_N, THINK, step
+from .digits import rational
 from .obs import mint
 from .refusals import WorldFalsified
 
@@ -58,7 +59,7 @@ class Result:
         self.record = record
 
     def __repr__(self):
-        return "Result(" + str(self.acts) + ", " + self.status + ", paid " + str(self.paid) + ")"
+        return "Result(" + str(self.acts) + ", " + self.status + ", paid " + rational(self.paid) + ")"
 
 
 def run(world, door):

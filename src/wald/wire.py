@@ -12,6 +12,7 @@ import json
 from fractions import Fraction
 
 from .belief import report
+from .digits import long_int, rational
 from .refusals import FLOAT, WIRE, Refused
 
 _DIGITS = "0123456789"
@@ -49,9 +50,10 @@ def _rational(x, where):
         if _decimal(x):
             raise Refused(FLOAT, where + ": " + json.dumps(x) + " is a decimal; write it \"p/q\"")
         raise Refused(WIRE, where + ": " + json.dumps(x) + " is not a rational")
-    if slash and not int(q):
+    den = long_int(q) if slash else 1
+    if not den:
         raise Refused(WIRE, where + ": " + json.dumps(x) + " divides by zero")
-    return Fraction(x)
+    return Fraction(-long_int(p) if x.startswith("-") else long_int(p), den)
 
 
 def _table(x, where):
@@ -181,8 +183,8 @@ def to_json(result, world):
         "acts": list(result.acts),
         "outcomes": list(result.outcomes),
         "status": result.status,
-        "paid": str(result.paid),
-        "thought": str(result.thought),
+        "paid": rational(result.paid),
+        "thought": rational(result.thought),
         "steps": dict(result.steps),
         "operations": list(result.operations),
         "final": str(report(result.final, world)),

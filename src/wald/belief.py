@@ -16,6 +16,7 @@ it; `episode.run` reads it when the thought is done. It is not a clock and it is
 """
 from fractions import Fraction
 
+from .digits import rational
 from .display import render
 from .obs import check_unspent, spend
 from .refusals import WorldFalsified
@@ -178,9 +179,9 @@ def report(belief, world=None):
     cost and what has been counted since the last thought began (E6): a measurement printed side
     by side, never a number any verb reads. The counter is reset where a thought starts, so what
     it shows is that thought's, and the label says so rather than leaving it to be assumed."""
-    text = ", ".join(str(state) + " " + str(p) for state, p in belief._w.items())
+    text = ", ".join(str(state) + " " + rational(p) for state, p in belief._w.items())
     if world is not None and world.dplus is not None:
         live = len(_measure(belief))
-        text += (" | " + str(live) + " live: " + str(world.ops[live]) + " operations predicted, "
+        text += (" | " + str(live) + " live: " + rational(world.ops[live]) + " operations predicted, "
                  + str(_counted()) + " counted since the last thought began")
     return render(text)
