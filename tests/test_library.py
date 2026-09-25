@@ -74,8 +74,8 @@ class TheElevenNames(unittest.TestCase):
 
     def test_law_is_the_dict_not_the_module(self):
         import wald.law                                     # noqa: F401 -- the submodule, again
-        self.assertEqual(wald.law, {"charter": "charter-v0.1", "surface": "surface-v0.1",
-                                    "kit": "kit-v0.11"})
+        self.assertEqual(wald.law, {"charter": "charter-v0.2", "surface": "surface-v0.2",
+                                    "kit": "kit-v0.12"})
 
     def test_law_kit_is_the_lock(self):
         with open(os.path.join(_path.ROOT, "cage", "charter.lock")) as f:

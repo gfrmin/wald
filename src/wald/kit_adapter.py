@@ -19,6 +19,7 @@ from . import counts as C
 from . import disclose as D
 from . import plated as P
 from .decide import decide, step
+from .digest import digest
 from .kernels import Kernel
 from .world import build
 
@@ -64,7 +65,7 @@ def _plated(W):
 
 
 class _Agent:
-    """The twelve methods of INTERFACE.md, each one line of conversion around one kernel call."""
+    """The thirteen methods of INTERFACE.md, each one line of conversion around one kernel call."""
 
     def push(self, b, K):
         return B.push(B._sealed(dict(b)), Kernel(K))
@@ -104,8 +105,11 @@ class _Agent:
         return {(h, "<after>" if end is not None else k, end): v
                 for (h, k, end), v in C.e7(_plated(W), Counter(counts)).items()}
 
-    def score(self, W, counts):
-        return C.score(_plated(W), Counter(counts))
+    def score(self, W, counts, falsifiers=()):
+        return C.score(_plated(W), Counter(counts), tuple(falsifiers))
+
+    def digest(self, counts, falsifiers=()):
+        return digest(Counter(counts), tuple(falsifiers))
 
     def world(self, W):
         return _plated(W)

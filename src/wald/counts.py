@@ -6,9 +6,9 @@ likelihood L(record | Global) raised to its count. The record is the unit, never
 the draws of one episode share its local, which L sums out. Nothing is fitted, nothing is
 forgotten, and a multiset has no order (C22, C23).
 
-Counts are facts, not beliefs: a multiset of records `((act, outcome), ...), end, after-report)`."""
-import hashlib
-import json
+Counts are facts, not beliefs: a multiset of records `((act, outcome), ...), end, after-report)`.
+A plate that ended falsified ships its falsifying record beside them (J26); SURFACE v0.2 V2.7 and
+V2.8 say what such a record may be and that the Score scores it too. The digest is `digest.py`."""
 from collections import Counter
 from fractions import Fraction
 
@@ -69,17 +69,15 @@ def episode_prior(plated, counts):
     return _sealed({state: pg[g] * p for g in pg for state, p in plated.pl[g].items()})
 
 
-def counts_sha(counts):
-    """The digest of Counts, in the encoding SURFACE v0.2 will adopt (counts_check.counts_sha)."""
-    rows = sorted([[[list(x) for x in draws], end, report, n] for (draws, end, report), n in counts.items()],
-                  key=json.dumps)
-    return hashlib.sha256(json.dumps(rows).encode()).hexdigest()
-
-
-def realisable(plated, record):
+def realisable(plated, record, falsifier=False):
     """A record an episode of this declaration can write under v0's loop, whatever its policy:
     its acts declared, at most N draws, each `once` act at most once, an ending outcome only as
-    the last draw and then as the end, an after-report exactly when an After-act is declared (S13)."""
+    the last draw and then as the end, and the end a terminal or the ending outcome drawn last;
+    an after-report exactly when an After-act is declared (S13).
+
+    A falsifying record (V2.7) is either a prefix -- the draws up to the report that falsified the
+    World inside the episode, no end and no after-report -- or a full record whose after-report
+    falsified it, which needs an After-act. A full record with no after-report falsified nothing."""
     draws, end, report = record
     world = plated.world
     if len(draws) > world.N:
@@ -92,29 +90,39 @@ def realisable(plated, record):
         seen.add(k)
         if o in act.ends and (i != len(draws) - 1 or end != ending(k, o)):
             return False
+    if falsifier and end is None:
+        return report is None and len(draws) >= 1
     if end not in world.T:
         if not draws:
             return False
         k, o = draws[-1]
         if o not in world.O[k].ends or end != ending(k, o):
             return False
+    if falsifier:
+        return report is not None and plated.after is not None
     return (report is not None) == (plated.after is not None)
 
 
-def expressible(plated, counts):
-    """Every record realisable here, and the whole multiset of positive probability under some
-    Global value (S13)."""
+def expressible(plated, counts, falsifiers=()):
+    """Every record and every falsifying record realisable here, and all of them together of
+    positive probability under some Global value (S13)."""
     if not all(realisable(plated, r) for r in counts):
         return False
-    return any(all(likelihood(plated, r, g) > 0 for r in counts) for g in plated.pg)
+    if not all(realisable(plated, f, falsifier=True) for f in falsifiers):
+        return False
+    evidence = counts + Counter(falsifiers)
+    return any(all(likelihood(plated, r, g) > 0 for r in evidence) for g in plated.pg)
 
 
-def score(plated, counts):
-    """S14: the leave-one-out predictive probability -- for each copy of each record, its
-    likelihood under the Prior conditioned on all the others, multiplied together."""
+def score(plated, counts, falsifiers=()):
+    """S14 as SURFACE v0.2 V2.8 decides it: the leave-one-out predictive probability -- for each
+    copy of each record of the Counts, and for each falsifying record, its likelihood under the
+    Prior conditioned on all the others, multiplied together. Signed S14 gave the falsifying
+    records no term, so data shipped as a falsifier moved the prior unscored (K28)."""
+    evidence = counts + Counter(falsifiers)
     total = Fraction(1)
-    for r, n in counts.items():
-        rest = Counter(counts)
+    for r, n in evidence.items():
+        rest = Counter(evidence)
         rest[r] -= 1
         rest = +rest
         b = posterior_global(plated, rest)

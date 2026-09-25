@@ -77,7 +77,7 @@ def _total(table, omega, what):
                       + ", which is not in Omega")
 
 
-def build(spec, floor=True):
+def build(spec, floor=True, sourced=True):
     """The World of section 1, out of a spec: the conversion, and the refusals that are the
     conversion itself -- a prior that is not one, a row that does not sum to 1, a table that is
     not a function on Omega.
@@ -86,7 +86,11 @@ def build(spec, floor=True):
     kit World dict is a probe and not a pack: C19 of CHARTER v0.1 hands the kernel a d+ that J11
     refuses in a pack, to prove that the cap does not read d+. For the same reason a probe may pass
     `floor=False`: kit v0.11's levels World has N = 0 and d = 1, where every decision is V_0
-    whatever d says. A pack never can -- `declare` rules on the floor, in its place in this list."""
+    whatever d says. A pack never can -- `declare` rules on the floor, in its place in this list.
+
+    `sourced=False` is CHARTER v0.2's dict as SURFACE v0.2 elaborates a pack to it (laws/model.py):
+    it carries no sources, because the surface has already judged every one, so none is asked for
+    and none is ruled on. Every other rule stands."""
     T = spec["T"]
     if not T:
         raise Refused(EMPTY_T, "a World with nothing to do")
@@ -137,19 +141,20 @@ def build(spec, floor=True):
                                   "the catch-all state gives " + repr(o) + " of " + repr(name) + " no mass")
 
     table_sources = spec.get("table_sources", None)
-    if table_sources is None:
-        raise Refused(TABLE_SOURCE, "no table names its source")
-    for table in TABLES:
-        if table_sources.get(table, None) not in TAGS:
-            raise Refused(TABLE_SOURCE, "the " + table + " table names no source in " + str(TAGS))
-    kernel_sources = table_sources.get("kernels", {})
-    for name in acts:
-        tags = kernel_sources.get(name, None)
-        # A kernel draws on every table inside it, so it names a list of sources -- empty when it
-        # holds no number at all, as `point` does.
-        if not isinstance(tags, (list, tuple)) or any(tag not in TAGS for tag in tags):
-            raise Refused(TABLE_SOURCE, "the kernel of " + repr(name)
-                          + " names no list of sources in " + str(TAGS))
+    if sourced:
+        if table_sources is None:
+            raise Refused(TABLE_SOURCE, "no table names its source")
+        for table in TABLES:
+            if table_sources.get(table, None) not in TAGS:
+                raise Refused(TABLE_SOURCE, "the " + table + " table names no source in " + str(TAGS))
+        kernel_sources = table_sources.get("kernels", {})
+        for name in acts:
+            tags = kernel_sources.get(name, None)
+            # A kernel draws on every table inside it, so it names a list of sources -- empty when
+            # it holds no number at all, as `point` does.
+            if not isinstance(tags, (list, tuple)) or any(tag not in TAGS for tag in tags):
+                raise Refused(TABLE_SOURCE, "the kernel of " + repr(name)
+                              + " names no list of sources in " + str(TAGS))
 
     components = frozenset(spec.get("components", ()))
     read_by = {}
@@ -167,7 +172,8 @@ def build(spec, floor=True):
 
     meta = (spec.get("dplus", None), spec.get("fraction", None), spec.get("rate", None),
             dict(spec.get("ops", None) or {}), dict(spec.get("score", None) or {}))
-    return World(prior, dict(T), acts, N, d, closed, bottom, dict(table_sources), components, meta)
+    return World(prior, dict(T), acts, N, d, closed, bottom,
+                 dict(table_sources) if sourced else None, components, meta)
 
 
 def _rulings(world):
@@ -175,10 +181,14 @@ def _rulings(world):
     it reads none of them, and none of these names can speak to it."""
     if world.dplus is None:
         return
+    # A World built unsourced (CHARTER v0.2's dict, `build`) has had its sources judged by the
+    # surface; the ranges below are still the World's to rule on.
     sources = world.table_sources
+    sourced = sources is not None
+    sources = sources or {}
     if world.fraction is None or not 0 <= world.fraction <= 1:
         raise Refused(FRACTION, "f = " + str(world.fraction) + " is not a share of the room (S6)")
-    if sources.get("fraction", None) not in OWNED:
+    if sourced and sources.get("fraction", None) not in OWNED:
         raise Refused(FRACTION, "the Fraction is a meta-belief, so it is `elicited` or `fitted`")
     states = len(world.prior.carrier())
     if set(world.ops) != set(range(1, states + 1)):
@@ -186,16 +196,16 @@ def _rulings(world):
                       + ": it is a cell for each count of live states")
     if any(cell < 0 for cell in world.ops.values()):
         raise Refused(COST, "a thought that takes fewer than no operations")
-    if sources.get("cost", None) not in OWNED:
+    if sourced and sources.get("cost", None) not in OWNED:
         raise Refused(COST, "the Cost is a meta-belief, so it is `elicited` or `fitted`")
-    if sources.get("rate", None) != "elicited":
+    if sourced and sources.get("rate", None) != "elicited":
         raise Refused(RATE, "the Rate is the owner's exchange rate, so it is `elicited`")
     # CHARTER v0.1 section 1 forbids a Rate below zero and names no clause for it (QUESTIONS.md
     # Q4). The author has now answered: ERRATA queues RATE for CHARTER v0.2 and SURFACE v0.1 K15
     # supplies it meanwhile, under the name the Rate's own row already uses.
     if world.rate is None or world.rate < 0:
         raise Refused(RATE, "the owner is paid to think: r = " + str(world.rate))
-    if sources.get("dplus", None) != "elicited":
+    if sourced and sources.get("dplus", None) != "elicited":
         raise Refused(TABLE_SOURCE, "Depth+ is the owner's, fixed by J11, so it is `elicited`"
                       + " (SURFACE v0.1 K18)")
     if not (world.d == 1 and world.dplus == 2 and world.N >= 2):
