@@ -214,7 +214,9 @@ wants these apart, they are names in `src/wald/wire.py` and `tools/serve.py` and
 
 ## Q7 (brief 007). `wald.law["charter"]`: L1 asks `charter-v0.1`, and CHARTER v0.2 is signed
 
-**Status: open. The kit's reading is taken; the kit is green.**
+**Status: answered in brief 008** (the owner's numbers): `wald.law` is `{"charter": "charter-v0.2",
+"surface": "surface-v0.2", "kit": "kit-v0.12"}`, and kit v0.12's L1 asks exactly that. The record
+below is kept as it was.
 
 **The page.** INTERFACE, kit v0.10: `law` is *"a dict naming the signed tags and the kit tag this
 package conforms to"*. Brief 007 implements `charter-v0.2`. `kit_library.py` L1 still asks
@@ -232,7 +234,9 @@ dict should name the newest charter this package conforms to, it is one string i
 
 ## Q8 (brief 007). The After-act's kernel "for every end": the page counts ending outcomes, `counts_check.refuse` does not
 
-**Status: open. The page's reading is taken; no kit World has both an ending outcome and an After-act.**
+**Status: answered at kit v0.12, the page's way.** `counts_check.ends_of` asks a kernel for each
+terminal and each `end:k=o`, and SURFACE v0.2 V2.5 writes it: rows for exactly the ends. The record
+below is kept as it was.
 
 **The page.** CHARTER v0.2 §3, After-act: *"taken once the episode has ended — the end being the
 terminal fired, or the pair (act, outcome) of the ending outcome reached — with kernel
@@ -268,7 +272,11 @@ the kit draws, the two readings are the same.
 
 ## Q9 (brief 007). The falsifying record of a report inside an episode has no end, and S13 checks it as a record
 
-**Status: open. The stand-in's reading is taken; the kit does not ship such a falsifier.**
+**Status: answered at kit v0.12:** SURFACE v0.2 V2.7 makes a prefix `[draws, None, None]` a
+falsifying record, `counts_check.realisable` accepts it, and K7 checks it ships. The second half
+below -- what `Plate.falsifier()` returns on a plate that was shipped falsifiers -- INTERFACE's kit
+v0.12 section does not say; mine still returns only the plate's own. One case of the first half is
+still open: Q15.
 
 **The page.** J26: a report that falsifies the World *"during the episode or after it"* ends the
 plate, *"the falsifying record is kept beside them and travels with them"*. S13: *"Counts shipped
@@ -289,3 +297,193 @@ such a shipment is refused PLATE. Also open under the same J26: whether `Plate.f
 plate that started from shipped Counts and their falsifier should return that shipped falsifier.
 Mine returns only the plate's own; the shipped one is in the evidence of every episode's prior.
 
+
+---
+
+## Q10 (brief 008). The After-act's kernel and price: five rules of the pages `surface_check` does not apply
+
+**Status: open. The pages' readings are taken; no corpus pack breaks any of them, so the kit is green either way.**
+
+**The pages.** V2.5: the After-act is `after(name, kernel=table({end: {state: {outcome: p}}}, source=…), reads=[…])`,
+"a kernel with rows for exactly the ends … each with a row for every state", and "a price, the cell of `price` under
+its name". SURFACE v0 §4: "Every row of probabilities is checked where it is written: each cell non-negative, each
+row summing to 1 — in a `table` …" (`KERNEL_ROW`). SURFACE v0 §2, which V2.4 carries to every table over states:
+"exactly the states of Ω as its keys, no fewer and no more"; "a key written twice in one dict … is refused".
+CHARTER v0 §1: price : O → ℚ≥0; CHARTER v0.2 §3: "Price's domain is O and the After-act". C2.S12: a pack "which
+declares ⊥ and gives some after-outcome probability 0 at ⊥, is refused by the name AFTER".
+
+**The reference.** `Checker.d_after` reads the kernel with `table(…, 3)` and never calls `rows_ok`; `spec_v02` pops
+the After-act's price before `validate`, so no price rule sees it; `counts_check.refuse` asks only that every end's
+rows cover Ω. Each pack below is **accepted**:
+
+| | the pack | reference | mine |
+|---|---|---|---|
+| a | `monitor_all_global.py` with `"pass": 9/10` → `"pass": -9/10` (a row of −9/10 and 1/10) | a World | `KERNEL_ROW` |
+| b | `appendix_a.py` with `("a3", "9/10"): {"a1": 1},` added to the `"abstain"` rows | a World | `TABLE_SHAPE` |
+| c | `appendix_a.py` with `"grade": 0` → `"grade": -1` in `price` | a World | `PRICE` |
+| d | `after_without_globals.py` with `closed=True` → `bottom=("a1", "9/10")` (`grade` gives `a2` no mass there) | a World | `AFTER` |
+| e | `tests/test_learned.py`'s `PEEK` (Q8's `peek`) with both `("peek", "drop")` and `"end:peek=drop"` rows | a World, the second row silently replacing the first | `DUPLICATE` |
+
+And one the other way round: (f) `appendix_a.py` with the after-outcomes under `"say a2"` written as tuples,
+`{("a1", "x"): 1}`, is accepted by the reference and by me — and `model.check_world` of the reference's own dict raises
+`ShapeError: an after-outcome is a name`. No record could hold such an after-report (V2.6), so the plate would
+write records no digest can encode.
+
+**What I did.** (a)–(e): the pages' names, each message citing this entry. (f): accepted, as the reference does; if
+tuple after-outcomes are unsayable, V2.5 wants the words and the refusal is one line in `learned.py`.
+
+**Which gate check.** `model.check_world` checks types; checking values too — every row a distribution, every table
+over states keyed by exactly Ω, every price at least 0, After-act included — would have caught (a)–(d) on the
+corpus's mutations; (e) is Q1's class again, one level down.
+
+---
+
+## Q11 (brief 008). A Global value the prior does not name: lawful by V2.3 and V2.4, a crash in the reference
+
+**Status: open. The page's reading is taken.**
+
+**The page.** V2.3: `local_prior` "has one row for exactly the Global values the prior names" — so a prior may name
+fewer than the space holds. V2.4: "The states are the pairs (local, Global) to which V2.2 and V2.3 together give
+positive probability." As SURFACE v0 K10 has it for states, a value the prior leaves out is not in Ω.
+
+**The pack.** `appendix_a.py` with its space written `"rel": ["9/10", "3/5", "1/2"]` and nothing else changed.
+
+**The reference.** `raised KeyError ('1/2',)`: `counts_check.refuse` loops over every Global value of the space and
+reads `W["prior_local"][g]` for each (and so do `classes`, `design_dist`, `post_global`).
+
+**What I did.** Accepted: Ω is the four states the prior names, as in appendix A. `plated.build` takes the Global
+values from P(Global), refuses one outside the space, and requires `prior_local` rows for exactly those.
+
+**Which gate check.** An invariance: adding a value to a component, which the prior does not name, changes no
+verdict, act or belief — K10's rule, as `invariance_check.py` already pads with a one-valued component.
+
+---
+
+## Q12 (brief 008). `score(of="counts")` in a pack with nothing to score is accepted, the Score dropped
+
+**Status: open. The page's reading is taken.**
+
+**The page.** V2.8: "`score(value, of="counts", source="data")`, only with `counts` … Refused MISSING".
+
+**The pack.** `appendix.py` (SURFACE v0's appendix) with `score(1, of="counts", source="data")` appended.
+
+**The reference.** Accepts it. `Checker.spec` goes to `spec_v01` for a pack with no `globals`, `after`, `counts` or
+`falsifiers`, and `spec_v01` never looks at `counts_score`; only `spec_v02` refuses it. The corpus's poison
+`v02_score_of_counts_without_counts.py` declares Globals, so it takes the other road.
+
+**What I did.** `MISSING`, citing this entry: a pack that writes any of the v0.2 declarations, `score(of="counts")`
+included, is read as SURFACE v0.2's.
+
+**Which gate check.** `page_check.py`'s traceability counts poisons per rule; one per route through the checker —
+with Globals, V2.9's World with none, and a v0 pack — would have found it.
+
+---
+
+## Q13 (brief 008). `falsifiers` before `counts`: V2.7 states no order, the reference requires one
+
+**Status: open. The page's reading is taken.**
+
+**The page.** V2.7: "`falsifiers([[draws, end, after], ...])`, only with `counts`". Where this page means an order it
+says so: V2.1 "It comes after `space` and before `prior`", V2.3 "It comes after `prior`". SURFACE v0 orders only
+tables over states after the prior, and a parameter before the cells that read it.
+
+**The pack.** `falsified_refit.py` with its `counts(…)` and `falsifiers(…)` lines swapped.
+
+**The reference.** `MISSING: [V2.7] counts: falsifying records travel with the Counts they ended` —
+`d_falsifiers` asks whether `counts` has been *seen*. `score(of="counts")` before `counts` it accepts.
+
+**What I did.** Accepted, the same World as the pack as written; `falsifiers` with no `counts` anywhere is `MISSING`
+when the pack is complete. The differential test allows the reference's order-refusal by this entry.
+
+**Which gate check.** The mutation differential in `tests/test_surface_differential.py` swaps neighbouring lines of
+every corpus pack; run against the page's stated orders it separates "refused by order" from "refused by absence".
+
+---
+
+## Q14 (brief 008). A record whose end names an ending outcome its draws never reach
+
+**Status: open. The rule's own words ("could have written every record itself") are taken over its list.**
+
+**The page.** C2.S13: "the declaration **could have written every record itself** under v0's episode mechanics …
+— its acts and end declared here, at most N draws, each `once` act at most once, an ending outcome only as the last
+draw and then as the end, an after-report exactly when an After-act is declared". V2.7 leaves this to C2.S13.
+
+**The World.** Q8's: appendix A with a free `once` act `peek` whose outcome `drop` ends the episode, N = 2, and an
+After-act row for `end:peek=drop`. Shipped Counts: one record `((), "end:peek=drop", "a1")` — no draw at all, yet it
+ends at `peek`'s ending outcome.
+
+**The reference.** `counts_check.realisable` returns True (every item of the list holds: `end:peek=drop` is an end,
+no draw breaks a rule), and `refuse` accepts the shipment with its digest and Score. No run of v0's loop writes that
+record: an episode ends at `end:peek=drop` only by drawing `drop` from `peek` last.
+
+**What I did.** `PLATE`: `counts.realisable` also asks that an end which is not a terminal be the ending outcome
+drawn last (`tests/test_learned.py`, Q14).
+
+**Which gate check.** Realisability checked against the loop itself: a record is realisable iff some design and
+outcome sequence of `counts_check.designs` and `_walk` — the enumeration S15 already uses — produces its draws and end.
+
+---
+
+## Q15 (brief 008). A prefix falsifier whose falsifying report is an ending outcome can never travel
+
+**Status: open. Both checkers refuse it; J26 says it travels.**
+
+**The page.** V2.7: a falsifying record is "a prefix `[draws, None, None]` ending at the report that falsified". The
+loop checks zero mass before it checks an ending outcome (v0.1 §2: "if P_b(o|a) = 0 the episode ends as
+WORLD_FALSIFIED; else …; then if o is an ending outcome the episode ends"), so a report of zero mass that is also an
+ending outcome falsifies, and its prefix ends with it. C2.S13: "an ending outcome only as the last draw **and then as
+the end**" — and a prefix has no end. J26: the falsifying record "is kept beside them and travels with them".
+
+**The World.** Appendix A with its one act `peek` reporting the answer with the reliability and `drop` — an ending
+outcome — with mass 0 in every state (so `drop` is in B_k, lawful), an After-act row for `end:peek=drop`. A plate
+whose door reports `drop` ends `WORLD_FALSIFIED` with `falsifier() == ((("peek", "drop"),), None, None)`.
+
+**The reference, and mine.** `counts_check.realisable(W, f, falsifier=True)` is False, so shipping it is `PLATE`;
+mine is the same. The falsifier the plate itself wrote cannot be shipped into the very declaration that wrote it.
+
+**What I did.** Nothing different from the reference: the question is which of V2.7 and C2.S13's "then as the end"
+decides.
+
+**Which gate check.** A round trip: every falsifier the reference plate (`kit_counts._RefWald`) writes is shippable
+into its own declaration.
+
+---
+
+## Q16 (brief 008). V2.11's text: which comment is a coding declaration, and a byte-order mark
+
+**Status: open. The reference's readings are taken for (a); Python's parser's for (b).**
+
+**The page.** V2.11: "A coding declaration naming another encoding … is refused NOT_A_DECLARATION." Python's
+language reference defines one: a comment on line 1 or 2 matching `coding[=:]\s*([-\w.]+)`, "If it is the second
+line, the first line must also be a comment-only line."
+
+**(a) The pack.** `appendix_a.py` without its two comment lines, and `# coding: latin-1` inserted as line 2, after
+`world(…)`. By Python's definition this is no coding declaration; the reference refuses it (`_plain_text` scans the
+first two lines of `splitlines()`, whatever line 1 is — and `splitlines` also breaks lines at `\f`, `\v`, `\x1c`–`\x1e`,
+`\x85`, U+2028 and U+2029, which Python's tokenizer does not). Mine refuses it too: I follow the reference.
+
+**(b) The pack.** `appendix_a.py` preceded by U+FEFF, which is what a UTF-8 file with a BOM decodes to. The reference:
+`NOT_A_DECLARATION: an identifier is ASCII; '﻿' would be folded` — `tokenize` reads `﻿world` as one name.
+Python's parser: `SyntaxError: invalid non-printable character U+FEFF`; U+FEFF is not an identifier character. Mine
+says `SYNTAX`. One fault, two names; K7 promises one rule's name for one fault.
+
+**Which gate check.** `invariance_check.py`'s hostile renaming reaches every name; the same for the text around the
+names — a comment line moved, a BOM added — would have shown both.
+
+---
+
+## Q17 (brief 008). Four v0.2 packs make `surface_check` raise instead of refuse
+
+**Status: open. Not a reading: a crash is not a verdict (Q3).**
+
+| the pack | reference | mine |
+|---|---|---|
+| `appendix_a.py` without its `price(…)` line | `AttributeError: 'Checker' object has no attribute 'prices'` (`spec_v02` reads the After-act's price first) | `MISSING` |
+| `appendix_a.py` with `after(…)` moved before `space(…)` | `AttributeError: … 'space'` (`d_after` reads `self.space`) | `MISSING` |
+| `appendix_a.py` with the think act's four declarations, `cost` before `local_prior` | `AttributeError: … 'prior'` (`d_cost` reads `len(self.prior)`) | `MISSING` |
+| `appendix_a.py` with a raw U+D800 in a name, handed over as a `str` | `UnicodeEncodeError` (`ast.parse` encodes before `_plain_text` looks) | `NOT_A_DECLARATION` |
+
+And Q11's `KeyError`. The first is 27 of the 13,445 mutations in `tests/test_surface_differential.py`.
+
+**Which gate check.** That differential, run by the gate against the reference alone: any exception that is not
+`Refused` on a mutation of the corpus fails the gate.

@@ -17,7 +17,7 @@ is the kernel's own and is not a host's to call.
 | `report(belief, world=None)` | a belief as a `Display` — text, and nothing else |
 | `Display` | renders with `str()`; every comparison, arithmetic, `bool`, `float`, `len` and index raises `TypeError` |
 | `refusals` | `Refused` (with `.name`), `WorldFalsified`, `ObsSpent`, and every refusal name as a constant |
-| `load_pack(text, data_dir)` | a pack's text elaborated to a World spec, ready for `declare`; the pack is parsed, never run |
+| `load_pack(text, data_dir)` | a pack's text elaborated to a World spec, ready for `declare` — CHARTER v0.2's dict for a pack that declares what is learned; the pack is parsed, never run |
 | `from_json(text)` | the wire's World spec to INTERFACE's dict: `"p/q"` strings to rationals, `ops` keys to ints |
 | `to_json(result, world)` | a Result as JSON: rationals as `"p/q"`, and the final belief as `report`'s text |
 | `law` | `{"charter", "surface", "kit"}`: the signed pages and the kit this package was judged under |
@@ -38,15 +38,15 @@ is no way back from the text to a belief, and nothing a host does with the text 
 CHARTER v0.2: what is learned between episodes. A World declares some dimensions of Ω as
 **Globals** (an instrument's reliability, a model's quality) and the rest as **locals**, drawn
 afresh each episode from P(local | Global); it may declare one **After-act**, a report taken once
-the episode has ended (a grade). Until SURFACE v0.2 is signed there is no pack syntax for this, so
-such a World is declared from INTERFACE's v0.2 dict (`locals`, `globals`, `prior_global`,
-`prior_local`, `after`, with states the pairs `(l, g)`), with `closed` and `table_sources` as
-for any spec.
+the episode has ended (a grade). Such a World comes from a pack (below), or from INTERFACE's v0.2
+dict (`locals`, `globals`, `prior_global`, `prior_local`, `after`, with states the pairs `(l, g)`) —
+the dict `load_pack` returns, which carries no sources; give it `table_sources` and they are
+checked as any spec's.
 
 ```python
-p = wald.plate(wald.declare(spec))
+p = wald.plate(wald.declare(wald.load_pack(text, data_dir)))
 r = p.run(door)          # the prior from p's Counts; v0's episode; the terminal fired; then, if an
-                         # After-act is declared, door.outcome("after") -- asked by name, after the fire
+                         # After-act is declared, door.outcome("grade") -- asked by name, after the fire
 r.record                 # ((("ask", "a1"),), "say a1", "a1"): the draws, the end, the after-report
 p.counts()               # a Counter of records: facts, which a host may hold (S1)
 print(p.disclosure())    # what no plate of this World can ever learn (S15), as text
@@ -55,7 +55,44 @@ print(p.disclosure())    # what no plate of this World can ever learn (S15), as 
 A plate keeps its Counts and nothing else. A report of probability zero, in the episode or in the
 after-report, ends the plate: `r.status` is `WORLD_FALSIFIED`, the Counts stay as they were,
 `p.falsifier()` holds the record that did it, and a further `run` raises `WorldFalsified`. A World
-with no Global plays on a plate exactly as under `run`.
+with no Global plays on a plate exactly as under `run`. `run` itself takes a v0 World; a World
+that declares what is learned is played on a plate.
+
+## Declaring what is learned, in a pack (SURFACE v0.2)
+
+Six declarations and one more kind of Score, each with the rule of `charter/SURFACE-v0.2.md` that
+states it. Every refusal names its rule, as `[V2.k]` in its detail.
+
+| written | says | rule |
+|---|---|---|
+| `globals(["rel"])` | which components of the space are Global; after `space`, before `prior`; every component may be (a monitor) | V2.1 |
+| `prior({"9/10": 1/2, "3/5": 1/2}, source=…)` | with Globals, P(Global), keyed by Global value — a name for one Global component, a tuple for several; without, v0's prior | V2.2 |
+| `local_prior({"9/10": {"a1": 1/2, "a2": 1/2}, …}, source=…)` | P(local \| Global): a row for each Global value the prior names; after `prior`; required when some component is local | V2.3 |
+| — | the states are the pairs the two give positive mass; every other table over states is keyed by them, as in SURFACE v0 | V2.4 |
+| `after("grade", kernel=table({end: {state: {outcome: p}}}, source=…), reads=[…])` | the After-act: a row for exactly the ends — each terminal, and `("act", "outcome")` for each ending outcome — its `reads`, and its price a cell of `price` | V2.5 |
+| `counts([[draws, end, after, n], …], sha256="…", source="data")` | shipped Counts: each record once, `n` written as decimal digits (no `True`, `0x1`, `1_0`), every outcome a name; no terminal's name begins `end:` | V2.6 |
+| `falsifiers([[draws, end, after], …])` | the falsifying records the Counts travel with: a prefix `[draws, None, None]`, or a full record whose after-report falsified | V2.7 |
+| `score(value, of="counts", source="data")` | the Score: for every copy of every record and every falsifying record, its likelihood under the prior conditioned on all the others, multiplied; the kernel recomputes it (`UNSCORED`) | V2.8 |
+
+A World that declares an After-act or Counts and no Global has one Global value, `()` (V2.9). No
+utility is written `by(...)` over a Global (`GLOBAL`, V2.10). A pack is UTF-8 with LF line endings:
+**read it as its bytes are written** — `path.read_bytes().decode("utf-8")`, never a text mode that
+translates newlines — for a CR anywhere, a coding declaration naming another encoding, a surrogate
+in any string, or an identifier outside ASCII is refused `NOT_A_DECLARATION` (V2.11).
+`python3 tools/wald_check.py pack.py` does that, and prints what the pack declares and learns.
+
+**The digest** (V2.13) is the SHA-256, lowercase hex, of the bytes of the compact JSON array
+`[counts, falsifiers]`: the records `[draws,end,after,n]` and the falsifying records
+`[draws,end,after]`, each array in ascending order of its elements' bytes, no whitespace, `null`
+for an absent end or after-report, and every character written as the page's escape table says —
+`\"`, `\\`, `\b`, `\f`, `\n`, `\r`, `\t`, other controls and everything from U+007F up as
+`\u` and four lowercase hex digits (an astral character as its surrogate pair), and U+0020–U+007E
+as themselves. DEL is escaped; `/` is not. Appendix A's one right grade:
+
+```
+$ printf '%s' '[[[[["ask","a1"]],"say a1","a1",1]],[]]' | sha256sum
+c0cd11a6dbce579fb5a0ccc1e157fd2316358b4d31bcb47889e8072c50b53dba  -
+```
 
 ## The wire
 
@@ -69,7 +106,7 @@ A session on CHARTER v0.1's Appendix B, run, not typed (`>` the client, `<` the 
 
 ```
 > {"op": "hello"}
-< {"law": {"charter": "charter-v0.1", "surface": "surface-v0.1", "kit": "kit-v0.11"}}
+< {"law": {"charter": "charter-v0.2", "surface": "surface-v0.2", "kit": "kit-v0.12"}}
 > {"op": "declare", "spec": {"prior": {"sick": "1/5", "well": "4/5"}, "T": {"treat": {"sick": "0", "well": "-2"}, "leave": {"sick": "-10", "well": "0"}}, "O": {"test": {"K": {"sick": {"+": "9/10", "-": "1/10"}, "well": {"+": "1/5", "-": "4/5"}}, "price": "1/2", "once": true, "ends": {}}, "scan": {"K": {"sick": {"y": "9/10", "n": "1/10"}, "well": {"y": "2/5", "n": "3/5"}}, "price": "1/5", "once": true, "ends": {}}}, "N": 2, "d": 1, "dplus": 2, "fraction": "1/2", "rate": "1/1000", "ops": {"1": "100", "2": "200"}, "closed": true, "table_sources": {"prior": "data", "utility": "elicited", "price": "elicited", "horizon": "elicited", "depth": "elicited", "kernels": {"test": ["data"], "scan": ["data"]}, "dplus": "elicited", "fraction": "elicited", "cost": "elicited", "rate": "elicited"}}}
 < {"ok": true, "world": 1}
 > {"op": "run", "world": 1}
