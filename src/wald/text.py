@@ -14,6 +14,7 @@ walks the text, skipping string literals and comments, and a non-ASCII character
 that can stand in an identifier is refused."""
 import ast
 
+from .digits import CHUNK
 from .refusals import NOT_A_DECLARATION, Refused
 
 UTF8 = ("utf-8", "utf8")
@@ -56,6 +57,43 @@ def refuse_surrogates(tree, text):
             except UnicodeEncodeError:
                 raise Refused(NOT_A_DECLARATION, "[V2.11] line " + str(node.lineno)
                               + ": a name holds a surrogate code point, which no text can")
+
+
+def swap_long(text):
+    """A decimal literal longer than CHUNK digits, swapped for a fresh name before the text is
+    parsed, since Python refuses to read one past its limit on integer conversion and the kernel
+    never lifts that limit (`digits.py`). Returns the text as it is to be parsed -- the tree's
+    positions are this text's -- and {name: digits}. A literal is a maximal run of letters,
+    digits, `_` and `.` outside strings and comments, not continuing a name: only one of decimal
+    digits with no leading zero is swapped, and anything else is left for the parser to read or
+    refuse (a long `1_000...` is SYNTAX, as Python says)."""
+    if "0" * (CHUNK + 1) not in text.translate(_AS_ZERO):
+        return text, {}
+    runs, skip, n = [], 0, len(text)
+    for i, ch in _outside_strings(text):
+        if i < skip or ch not in _DIGITS or (i and (text[i - 1].isalnum() or text[i - 1] in "_.")):
+            continue
+        j = i
+        while j < n and (text[j].isalnum() or text[j] in "_."):
+            j += 1
+        skip = j
+        run = text[i:j]
+        if len(run) > CHUNK and all(c in _DIGITS for c in run) and run[0] != "0":
+            runs.append((i, j))
+    longs, pieces, at, k = {}, [], 0, 0
+    for i, j in runs:
+        while "_long%d_" % k in text:
+            k += 1
+        name = "_long%d_" % k
+        k += 1
+        longs[name] = text[i:j]
+        pieces += [text[at:i], name]
+        at = j
+    return "".join(pieces) + text[at:], longs
+
+
+_DIGITS = "0123456789"
+_AS_ZERO = {ord(c): "0" for c in _DIGITS}
 
 
 def _coding(line):

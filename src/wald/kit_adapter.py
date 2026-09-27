@@ -19,7 +19,7 @@ from . import counts as C
 from . import disclose as D
 from . import plated as P
 from .decide import decide, step
-from .digest import digest
+from .canonical import digest
 from .kernels import Kernel
 from .world import build
 

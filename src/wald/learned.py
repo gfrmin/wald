@@ -11,6 +11,7 @@ from collections import Counter
 from fractions import Fraction
 from itertools import product
 
+from .digits import long_int
 from .refusals import (DUPLICATE, FLOAT, MISSING, NOT_A_DECLARATION, PRIOR, TABLE_SHAPE,
                        TABLE_SOURCE, UNDECLARED_READ, UNKNOWN_NAME, Refused)
 
@@ -216,17 +217,18 @@ class Learned:
             n = row.elts[3]
             if isinstance(n, ast.Constant) and isinstance(n.value, float):
                 raise Refused(FLOAT, "[V2.6] line " + str(n.lineno) + ": a multiplicity is a whole number")
-            written = ast.get_source_segment(self.text, n)
+            long = isinstance(n, ast.Name) and n.id in self.cells.longs
+            written = self.cells.longs[n.id] if long else ast.get_source_segment(self.text, n)
             if written is not None and not _digits(written):
                 raise Refused(NOT_A_DECLARATION, "[V2.6] line " + str(n.lineno) + ": a multiplicity"
                               + " is written as decimal digits, not " + repr(written))
-            if not (isinstance(n, ast.Constant) and type(n.value) is int and n.value >= 1):
+            if not (long or isinstance(n, ast.Constant) and type(n.value) is int and n.value >= 1):
                 raise Refused(NOT_A_DECLARATION, "[V2.6] line " + str(getattr(n, "lineno", "?"))
                               + ": a multiplicity is a whole number at least 1, written out")
             record = self.record(ast.List(elts=row.elts[:3], ctx=ast.Load(), lineno=row.lineno))
             if record in counts:
                 raise Refused(DUPLICATE, "[V2.6] line " + str(row.lineno) + ": a record written twice")
-            counts[record] = n.value
+            counts[record] = long_int(written) if long else n.value
             self.cells.count(tag)                    # V2.12: a multiplicity, under `data`
         sha = self.cells.plain(given["sha256"])
         if not isinstance(sha, str):

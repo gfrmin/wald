@@ -185,7 +185,7 @@ def _unpaid(table, locs, globs, what):
 def declare(spec):
     """Accept a v0.2 declaration, or refuse it by the name of the clause it breaks."""
     from . import counts as C
-    from .digest import digest
+    from .canonical import digest
     from .world import _rulings
 
     plated = build(spec)

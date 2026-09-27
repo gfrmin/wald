@@ -3,8 +3,10 @@
 The kit runs the corpus as written. This runs it mutated: every pack with each line deleted, each
 line doubled, each pair of neighbouring lines swapped, and a list of substitutions that break one
 rule apiece. My checker and the reference must reach the same verdict -- the same refusal name,
-or the same World and the same census -- and where they do not, the difference must be one the
-page settles and `QUESTIONS.md` records. Every divergence is collected, not just the first.
+or the same World and the same census -- save where SURFACE K7 lets two names of two broken rules
+differ. Since kit v0.13 the reference agrees with the page on brief 008's Q10-Q17, so no other
+divergence is allowed: one that remains is a new question. Every divergence is collected, not
+just the first.
 
 Packs are read as their bytes are written, with no newline translation (SURFACE v0.2 V2.11).
 Skipped when the charter is not fetched: the reference is a definition to read, never a dependency.
@@ -67,8 +69,14 @@ THINK_ACT = {"FRACTION", "COST", "RATE", "DEPTH_PLUS", "UNSCORED", "TABLE_SOURCE
 # The same for CHARTER v0.2's names: `plated.build` rules AFTER while it converts, before
 # `plated.declare` rules GLOBAL; `counts_check.refuse` rules GLOBAL first.
 CHARTER_V02 = {"GLOBAL", "AFTER", "PLATE", "UNSCORED"}
-# The divergences QUESTIONS.md records: my refusal names its entry.
-RECORDED = ("QUESTIONS.md Q10", "QUESTIONS.md Q12")
+# And the mutations of this file that break two rules by themselves, named with both rules. A row
+# of the After-act that is not a distribution, which also makes the kernel read `rel` beside
+# `answer`: KERNEL_ROW and UNDECLARED_READ, in any pack. A pack with `cost` that loses `globals`:
+# its P(Global) then names states outside the space (TABLE_SHAPE) and its `cost` list is no longer
+# |Omega| long (COST). Each entry is (pack, or None for any, mutation, the two names).
+TWO_RULES = {(None, "'\"abstain\": {(\"a1\", \"9/10\"): {\"a1\": 1}' -> '\"abstain\": {(\"a1\", \"9/10\"): {\"a1\": 1/2}'",
+              frozenset({"KERNEL_ROW", "UNDECLARED_READ"})),
+             ("v02_q17c_cost_before_local_prior.py", "minus line 7", frozenset({"TABLE_SHAPE", "COST"}))}
 
 
 def variants(text):
@@ -92,6 +100,15 @@ def corpus():
                 yield name, (directory / name).read_bytes().decode("utf-8")     # V2.11: as written
 
 
+def poison_names(text):
+    """The names a poison expects, from its first line `# expect: NAME[, NAME]`; none for a lawful
+    pack. The mutation keeps the poison's broken rule, so the poison's name stays lawful (K7)."""
+    first = text.split("\n", 1)[0]
+    if not first.startswith("# expect:"):
+        return frozenset()
+    return frozenset(first[len("# expect:"):].replace(",", " ").replace("|", " ").split())
+
+
 @unittest.skipIf(S is None, "charter not fetched: run sh cage/fetch_charter.sh")
 class AgainstTheReference(unittest.TestCase):
     def setUp(self):
@@ -103,7 +120,7 @@ class AgainstTheReference(unittest.TestCase):
             return self.reference.check(text, {}, OK), self.reference.census(text, {}, OK), ""
         except self.reference.Refused as e:
             return e.name, None, str(e)
-        except Exception as e:                      # a crash is not a refusal: QUESTIONS.md Q3, Q17
+        except Exception as e:                      # a crash is not a refusal: never allowed
             return "raised " + type(e).__name__, None, str(e)
 
     def my_verdict(self, text):
@@ -112,17 +129,15 @@ class AgainstTheReference(unittest.TestCase):
         except Refused as e:
             return e.name, None, str(e)
 
-    def recorded(self, theirs, their_why, mine, my_why):
-        """Why a divergence is allowed, or None."""
-        if isinstance(theirs, str) and theirs.startswith("raised "):
-            return "Q3, Q17: the reference raises where the page refuses or accepts"
-        if not isinstance(theirs, str) and mine == "DUPLICATE" and "Q10" not in my_why:
-            return "Q1"
-        if any(q in my_why for q in RECORDED):
-            return my_why[my_why.index("QUESTIONS.md"):]
-        if theirs == "MISSING" and "[V2.7] counts:" in their_why:
-            return "Q13: falsifying records before their Counts"
+    def recorded(self, theirs, their_why, mine, my_why, expected=frozenset(), label="", name=None):
+        """Why a divergence is allowed, or None. `expected` is a poison's names, from its first
+        line; `label` the mutation's."""
         if isinstance(mine, str) and isinstance(theirs, str):
+            if theirs in expected or mine in expected:
+                return "SURFACE K7: a poison's rule, and the rule its mutation broke"
+            if {(None, label, frozenset({theirs, mine})),
+                    (name, label, frozenset({theirs, mine}))} & TWO_RULES:
+                return "SURFACE K7: a mutation that breaks two rules"
             if mine in WORLD_FIRST and theirs in THINK_ACT:
                 return "SURFACE K7: two rules, two names"
             if mine in CHARTER_V02 and theirs in CHARTER_V02:
@@ -132,13 +147,14 @@ class AgainstTheReference(unittest.TestCase):
     def test_every_mutation_of_every_pack(self):
         checked, allowed, unrecorded = 0, {}, []
         for name, text in corpus():
+            expected = poison_names(text)
             for label, variant in variants(text):
                 checked += 1
                 theirs, their_census, their_why = self.their_verdict(variant)
                 mine, my_census, my_why = self.my_verdict(variant)
                 if theirs == mine and their_census == my_census:
                     continue
-                why = self.recorded(theirs, their_why, mine, my_why)
+                why = self.recorded(theirs, their_why, mine, my_why, expected, label, name)
                 if why is None:
                     unrecorded.append("%s :: %s: reference %r, mine %r %s" % (
                         name, label, theirs if isinstance(theirs, str) else "a World",

@@ -302,7 +302,7 @@ Mine returns only the plate's own; the shipped one is in the evidence of every e
 
 ## Q10 (brief 008). The After-act's kernel and price: five rules of the pages `surface_check` does not apply
 
-**Status: open. The pages' readings are taken; no corpus pack breaks any of them, so the kit is green either way.**
+**Status: closed by kit v0.13 (brief 009).** Q10a–e: the reference adopted the readings taken here, by the names given, pinned by the poisons `v02_q10*.py`; a state of a one-component space respelt as a one-name tuple is TABLE_SHAPE [V2.4]. Q10f (After-act outcomes written as tuples) is silent on the page and queued for SURFACE v0.3 (`ERRATA.md`); the kernel keeps accepting them, as the reference does.
 
 **The pages.** V2.5: the After-act is `after(name, kernel=table({end: {state: {outcome: p}}}, source=…), reads=[…])`,
 "a kernel with rows for exactly the ends … each with a row for every state", and "a price, the cell of `price` under
@@ -340,7 +340,7 @@ corpus's mutations; (e) is Q1's class again, one level down.
 
 ## Q11 (brief 008). A Global value the prior does not name: lawful by V2.3 and V2.4, a crash in the reference
 
-**Status: open. The page's reading is taken.**
+**Status: closed by kit v0.13 (brief 009): the reference adopted the page's reading, pinned by `global_value_unnamed.py` and K8.**
 
 **The page.** V2.3: `local_prior` "has one row for exactly the Global values the prior names" — so a prior may name
 fewer than the space holds. V2.4: "The states are the pairs (local, Global) to which V2.2 and V2.3 together give
@@ -361,7 +361,7 @@ verdict, act or belief — K10's rule, as `invariance_check.py` already pads wit
 
 ## Q12 (brief 008). `score(of="counts")` in a pack with nothing to score is accepted, the Score dropped
 
-**Status: open. The page's reading is taken.**
+**Status: closed by kit v0.13 (brief 009): the reference adopted the page's reading, pinned by `v02_q12_score_of_counts_in_v0_pack.py`.**
 
 **The page.** V2.8: "`score(value, of="counts", source="data")`, only with `counts` … Refused MISSING".
 
@@ -381,7 +381,7 @@ with Globals, V2.9's World with none, and a v0 pack — would have found it.
 
 ## Q13 (brief 008). `falsifiers` before `counts`: V2.7 states no order, the reference requires one
 
-**Status: open. The page's reading is taken.**
+**Status: closed by kit v0.13 (brief 009): the reference adopted the page's reading, pinned by `falsifiers_before_counts.py`.**
 
 **The page.** V2.7: "`falsifiers([[draws, end, after], ...])`, only with `counts`". Where this page means an order it
 says so: V2.1 "It comes after `space` and before `prior`", V2.3 "It comes after `prior`". SURFACE v0 orders only
@@ -402,7 +402,7 @@ every corpus pack; run against the page's stated orders it separates "refused by
 
 ## Q14 (brief 008). A record whose end names an ending outcome its draws never reach
 
-**Status: open. The rule's own words ("could have written every record itself") are taken over its list.**
+**Status: closed by kit v0.13 (brief 009): the reference adopted this reading — realisability is v0's loop — pinned by `v02_q14_end_without_its_draw.py` and K8.**
 
 **The page.** C2.S13: "the declaration **could have written every record itself** under v0's episode mechanics …
 — its acts and end declared here, at most N draws, each `once` act at most once, an ending outcome only as the last
@@ -426,7 +426,7 @@ outcome sequence of `counts_check.designs` and `_walk` — the enumeration S15 a
 
 ## Q15 (brief 008). A prefix falsifier whose falsifying report is an ending outcome can never travel
 
-**Status: open. Both checkers refuse it; J26 says it travels.**
+**Status: closed by kit v0.13 (brief 009), and the kernel changed.** V2.7 decides: a prefix is the draws "ending at the report that falsified", and v0 §2's loop checks zero mass before it checks an ending outcome, so a falsifying report that is an ending outcome is the prefix's last draw and never an end; C2.S13's "and then as the end" is about a record. `counts.realisable` now accepts such a prefix. Pinned by `prefix_falsifier_ending.py` (R3), K8 and K9. It still cannot ship back into the declaration that wrote it: no Global value there holds the falsifier together with the Counts it followed (C2.S13).
 
 **The page.** V2.7: a falsifying record is "a prefix `[draws, None, None]` ending at the report that falsified". The
 loop checks zero mass before it checks an ending outcome (v0.1 §2: "if P_b(o|a) = 0 the episode ends as
@@ -451,7 +451,7 @@ into its own declaration.
 
 ## Q16 (brief 008). V2.11's text: which comment is a coding declaration, and a byte-order mark
 
-**Status: open. The reference's readings are taken for (a); Python's parser's for (b).**
+**Status: answered by brief 009: the page is silent, and SURFACE v0.3 is to decide (`ERRATA.md`).** The kit pins neither name for a byte-order mark and R10 accepts any refusal; the kernel keeps SYNTAX.
 
 **The page.** V2.11: "A coding declaration naming another encoding … is refused NOT_A_DECLARATION." Python's
 language reference defines one: a comment on line 1 or 2 matching `coding[=:]\s*([-\w.]+)`, "If it is the second
@@ -474,7 +474,7 @@ names — a comment line moved, a BOM added — would have shown both.
 
 ## Q17 (brief 008). Four v0.2 packs make `surface_check` raise instead of refuse
 
-**Status: open. Not a reading: a crash is not a verdict (Q3).**
+**Status: closed by kit v0.13 (brief 009): the reference refuses each by the name the kernel gives, pinned by `v02_q17b_after_before_space.py`, `v02_q17c_cost_before_local_prior.py`, `after_act_without_price_declaration.py` and R9's raw surrogate.**
 
 | the pack | reference | mine |
 |---|---|---|

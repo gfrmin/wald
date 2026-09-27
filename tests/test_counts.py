@@ -12,7 +12,7 @@ import wald
 from wald import counts as C
 from wald import disclose as D
 from wald import plated as P
-from wald.digest import digest
+from wald.canonical import digest
 from wald.belief import _weights
 from wald.decide import value
 from wald.refusals import AFTER, GLOBAL, PLATE, UNSCORED, Refused, WorldFalsified

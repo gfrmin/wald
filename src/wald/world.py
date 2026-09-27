@@ -2,6 +2,7 @@
 Nothing runs until `declare` has accepted the pack."""
 from fractions import Fraction
 
+from .digits import rational
 from .dist import Dist
 from .kernels import Kernel
 from .same import Sameness
@@ -125,7 +126,7 @@ def build(spec, floor=True, sourced=True):
 
     N, d = spec["N"], spec["d"]
     if floor and not 1 <= d <= N:
-        raise Refused(DEPTH, "d = " + str(d) + " with N = " + str(N))
+        raise Refused(DEPTH, "d = " + rational(d) + " with N = " + rational(N))
 
     closed = bool(spec.get("closed", False))
     bottom = spec.get("bottom", None)

@@ -13,7 +13,7 @@ import wald
 from wald import counts as C
 from wald.belief import _weights
 from wald.decide import decide, value
-from wald.digest import canonical, digest
+from wald.canonical import canonical, digest
 from wald.refusals import Refused
 
 GOOD, POOR = ("9/10",), ("3/5",)
@@ -299,10 +299,15 @@ class Readings(unittest.TestCase):
         self.assertFalse(C.realisable(plated, ((), "end:peek=drop", "a1")))       # an ending end does
         self.assertFalse(C.realisable(plated, ((("peek", "go"),), "end:peek=drop", "a1")))
 
-    def test_Q15_a_prefix_falsifier_ends_at_its_report(self):
+    def test_Q15_a_prefix_falsifier_may_end_at_an_ending_outcome(self):
+        """Brief 009: the loop checks zero mass before an ending outcome, so a falsifying report
+        that is an ending outcome is the prefix's last draw, never an end (V2.7)."""
         plated = wald.declare(wald.load_pack(PEEK, "."))
         self.assertTrue(C.realisable(plated, ((("peek", "go"),), None, None), falsifier=True))
-        self.assertFalse(C.realisable(plated, ((("peek", "drop"),), None, None), falsifier=True))
+        self.assertTrue(C.realisable(plated, ((("peek", "drop"),), None, None), falsifier=True))
+        self.assertFalse(C.realisable(plated, ((("peek", "drop"), ("ask", "a1")), None, None), falsifier=True))
+        self.assertFalse(C.realisable(plated, ((("peek", "drop"),), "say a1", "a1")))   # its end is its own
+        self.assertTrue(C.realisable(plated, ((("peek", "drop"),), "end:peek=drop", "a1")))
 
 
 # Appendix A with a second act `peek`, whose outcome `drop` ends the episode (QUESTIONS.md Q8).

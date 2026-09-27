@@ -8,6 +8,8 @@ reading of it: Python's `json` would agree today, but DEL (U+007F) is escaped an
 only because the table says so. The digest is a name, not a numeral (V2.12)."""
 import hashlib
 
+from .digits import decimal
+
 ITSELF = "itself"
 CODE = "\\uXXXX"                  # \u and four lowercase hex digits of the code point
 PAIR = "\\uXXXX\\uXXXX"           # the same, for each half of its UTF-16 surrogate pair
@@ -59,7 +61,7 @@ def _record(record, n=None):
     if n is not None:
         if not isinstance(n, int) or isinstance(n, bool) or n < 1:
             raise ValueError("a multiplicity is a whole number at least 1, not " + repr(n))
-        parts.append(str(n))       # decimal digits: no sign, no exponent, no leading zero
+        parts.append(decimal(n))   # decimal digits: no sign, no exponent, no leading zero
     return "[" + ",".join(parts) + "]"
 
 

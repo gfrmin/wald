@@ -75,9 +75,11 @@ def realisable(plated, record, falsifier=False):
     the last draw and then as the end, and the end a terminal or the ending outcome drawn last;
     an after-report exactly when an After-act is declared (S13).
 
-    A falsifying record (V2.7) is either a prefix -- the draws up to the report that falsified the
-    World inside the episode, no end and no after-report -- or a full record whose after-report
-    falsified it, which needs an After-act. A full record with no after-report falsified nothing."""
+    A falsifying record (V2.7) is either a prefix -- the draws up to and including the report that
+    falsified the World inside the episode, no end and no after-report -- or a full record whose
+    after-report falsified it, which needs an After-act. A full record with no after-report
+    falsified nothing. The loop checks zero mass before it checks an ending outcome, so a
+    falsifying report that is an ending outcome is a prefix's last draw and never its end (Q15)."""
     draws, end, report = record
     world = plated.world
     if len(draws) > world.N:
@@ -88,16 +90,15 @@ def realisable(plated, record, falsifier=False):
         if act is None or (act.once and k in seen):
             return False
         seen.add(k)
-        if o in act.ends and (i != len(draws) - 1 or end != ending(k, o)):
+        if o in act.ends and i != len(draws) - 1:
             return False
     if falsifier and end is None:
         return report is None and len(draws) >= 1
-    if end not in world.T:
-        if not draws:
+    if draws and draws[-1][1] in world.O[draws[-1][0]].ends:
+        if end != ending(*draws[-1]):               # the ending outcome is the end (Q14)
             return False
-        k, o = draws[-1]
-        if o not in world.O[k].ends or end != ending(k, o):
-            return False
+    elif end not in world.T:
+        return False
     if falsifier:
         return report is not None and plated.after is not None
     return (report is not None) == (plated.after is not None)

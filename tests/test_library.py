@@ -59,14 +59,15 @@ def refused(f, *args):
     return None
 
 
-class TheElevenNames(unittest.TestCase):
+class TheFourteenNames(unittest.TestCase):
     def test_all(self):
-        """Eleven names on `wald`, and `__all__` lists them (ST1 as of kit v0.11; Q5 answered)."""
+        """Fourteen names on `wald`, and `__all__` lists them (ST1 as of kit v0.13)."""
         for name in ("declare", "run", "Door", "report", "Display", "refusals",
-                     "load_pack", "from_json", "to_json", "law", "plate"):
+                     "load_pack", "from_json", "to_json", "law", "plate", "digest", "score", "e7"):
             self.assertTrue(hasattr(wald, name), name)
         self.assertEqual(set(wald.__all__), {"declare", "run", "Door", "report", "Display", "refusals",
-                                             "load_pack", "from_json", "to_json", "law", "plate"})
+                                             "load_pack", "from_json", "to_json", "law", "plate",
+                                             "digest", "score", "e7"})
 
     def test_plate_is_the_function_not_the_module(self):
         import wald.plate                                   # noqa: F401 -- the submodule, again
@@ -75,7 +76,18 @@ class TheElevenNames(unittest.TestCase):
     def test_law_is_the_dict_not_the_module(self):
         import wald.law                                     # noqa: F401 -- the submodule, again
         self.assertEqual(wald.law, {"charter": "charter-v0.2", "surface": "surface-v0.2",
-                                    "kit": "kit-v0.12"})
+                                    "kit": "kit-v0.13"})
+
+    def test_digest_is_the_function_from_a_fresh_import(self):
+        """Kit v0.13 found `wald.digest` the submodule, and only once the adapter had imported it.
+        No submodule of wald is named digest, score or e7 now, so no import can shadow them."""
+        code = "import wald, types; print(all(callable(getattr(wald, n)) and not isinstance(getattr(wald, n)," \
+               " types.ModuleType) for n in ('digest', 'score', 'e7')))"
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                             env={"PYTHONPATH": os.path.join(_path.ROOT, "src")})
+        self.assertEqual(out.stdout.strip(), "True", out.stderr)
+        import wald.kit_adapter                             # noqa: F401 -- the adapter imports the encoder
+        self.assertTrue(callable(wald.digest) and callable(wald.score) and callable(wald.e7))
 
     def test_law_kit_is_the_lock(self):
         with open(os.path.join(_path.ROOT, "cage", "charter.lock")) as f:
