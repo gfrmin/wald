@@ -53,7 +53,7 @@ they are the kernel's, and nothing in `API.md` names them.
 | `wald/disclose.py` | S15: the Global values no realisable design separates, and the classes of them that settle something an act can feel; it refuses nothing |
 | `wald/ship.py` | the three names a host ships Counts with — `digest`, `score` written as a pack writes it, `e7` as a `Display` — each a conversion around `canonical`, `counts` and `digits`, so a host needs no kit (brief 009) |
 | `wald/digits.py` | whole numbers of any length read from and written to decimal digits a piece at a time, so a Score of tens of thousands of digits is read and written without lifting Python's interpreter-wide limit on integer conversion, which the kernel never touches |
-| `wald/plate.py` | `Plate`: its Counts and its falsifying record and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) |
+| `wald/plate.py` | `Plate`: its Counts, its falsifying record and its lookahead's memo, which it drops before any episode whose prior moved (brief 010), and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) |
 | `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, the census of quantities by source, and v0.1's K16 provenance — what sources a cell descends from, so a meta-table cannot be handed one it could not have declared |
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
 | `wald/law.py` | the three tags this package was judged under, in one place, so a consumer can print which law its wald obeys and the kit can hold it to the lock |
@@ -65,6 +65,7 @@ they are the kernel's, and nothing in `API.md` names them.
 | `tools/make_wordle_pack.py` | outside `src/`: writes a Wordle pack from one of the charter's word lists at a given depth, the game's feedback rule included — and, with `--think`, the five declarations of SURFACE v0.1 |
 | `tools/play_wordle.py` | outside `src/`: plays every answer of one or more packs through `wald.episode.run` behind a door that is the game, and writes the scoreboard — S7's four buckets, the thought charged and E6's two operation counts included |
 | `tools/serve.py` | outside `src/`: the wire as a process — JSON lines on stdin/stdout, the server the kernel's side of the Door and the client the world's; every client error refused by name, and all of the kernel's I/O is here; a World of CHARTER v0.2 loads over it but does not run, because the wire has no plate op |
+| `tools/plate_memory.py` | outside `src/`: brief 010's measurement — appendix A on 100 Global values, a plate whose prior moves every episode, its peak resident memory and seconds an episode at given marks, through public names only |
 | `tools/curves.py` | outside `src/`: CHARTER E3 when thinking has a price — the five policy values along a grid of rates, exactly, from the kernel's own acts |
 
 ## The three things that exist exactly once
@@ -175,9 +176,24 @@ a superset are enough to start from. At the bottom of the 200-word tree there ar
 representatives to sift, not two hundred.
 
 **3. A value already found is not found again**, keyed by the measure, the menu and n — at n = 0 the
-menu is not in the key, because only terminal acts are in reach and T never leaves the menu. The
-table belongs to the World, which does not change once declared, so it is shared by every episode
-played in it: this is what makes 200 answers cost barely more than the first one.
+menu is not in the key, because only terminal acts are in reach and T never leaves the menu. Under
+`run` the table belongs to the World, which does not change once declared, so it is shared by every
+episode played in it: this is what makes 200 answers cost barely more than the first one.
+
+**On a plate the table is the plate's, and lives only while the prior recurs (brief 010).** `_value`
+reads the World and the belief, never the Counts, so a value found under one prior is the same value
+the next time that prior comes round; but on a plate that learns no prior comes round, and the
+table only grew — 0.25 GB an episode in the arena, at 1,152 Global values. So the plate compares the
+next episode's prior with the last one's, exactly, and drops what was found when they differ, before
+the episode starts. With no Global, or a record that moves no Global value, they are equal and the
+table is kept, as before. The prior is held for that comparison and read by nothing else. **Nothing
+of a past episode's belief survives the next one's start** — a tightening of S13's "no cache with a
+meaning", since the table's keys are beliefs and a belief on a learning plate encodes
+P(Global | Counts). `step` takes the plate's table and `decide` never sees where it came from.
+Measured (`tools/plate_memory.py`, appendix A on 100 Global values, 200 episodes): peak resident
+memory 31.8 / 44.1 / 78.5 MB after 50 / 100 / 200 episodes before, 23.1 / 23.3 / 23.5 MB after,
+at the same seconds an episode; `tests/test_plate_memo.py` plays the table kept and dropped and gets
+every act and every value the same.
 
 **What they cost and what they bought.** At 200 words, `check` takes 1.8 s and `declare` 0.5 s. At
 depth 1 the first episode takes 1.8 s and all 200 answers 2.2 s. At depth 2 the root decision takes
@@ -375,7 +391,8 @@ Python sets on the package when the adapter imports it. The module is `canonical
 ## Not here
 
 No `host` form — withdrawn by SURFACE K4. No floats. No learning but Counts: no carried
-posterior, no log, no forgetting, no fitted parameter within a plate (S13). No fast path that is not exact:
+posterior, no log, no forgetting, no fitted parameter within a plate (S13), and no lookahead table carried
+past an episode whose prior moved. No fast path that is not exact:
 no pruning by a threshold, no sampling, and no special case for a uniform prior or a deterministic
 kernel. The kernel does not know what game it is playing — there is no feedback rule and no word
 list in `src/wald`. No clock: `time` is not imported anywhere here, and a thought costs the number

@@ -56,7 +56,8 @@ class World:
     def work(self):
         """What the lookahead may work out once and keep: which acts are copies of which, and
         the values already found. Both are facts about a World, and a World does not change once
-        it is declared, so they are built on its first decision and then belong to it."""
+        it is declared, so they are built on its first decision and then belong to it. The values
+        are `run`'s, kept for the World's life; a plate keeps its own (`plate.py`)."""
         if self._work is None:
             self._work = (Sameness(self), {})
         return self._work

@@ -1,6 +1,14 @@
 """The plate of CHARTER v0.2: every episode run under one declaration, and the Counts they write.
-A Plate holds its Counts and, once falsified, its falsifying record -- nothing else: no log, no
-belief, no cache with a meaning (S13).
+A Plate holds its Counts and, once falsified, its falsifying record -- and the values its
+lookahead has found, which mean nothing: no act and no value changes if they are dropped. No log,
+no belief, no cache with a meaning (S13).
+
+Those values are kept only while the episodes' prior recurs. `_value` reads the World and the
+belief, never the Counts, so a value found under one prior is the same value under it again; but
+on a plate that learns no prior recurs, and every belief the lookahead reaches is new. So before an
+episode whose prior differs from the last one's, what was found is dropped, and the kernel holds no
+belief of a past episode once the next begins. Where the prior cannot move -- no Global, or records
+that move none -- the values are kept for the plate's life, as `run` keeps the World's.
 
 One episode is the prior from the Counts, v0's loop at the floor unchanged, the terminal fired,
 then -- if an After-act is declared -- its report, asked of the door by name after the fire and
@@ -10,7 +18,7 @@ from collections import Counter
 
 from . import counts as C
 from . import disclose
-from .belief import _condition
+from .belief import _condition, _measure
 from .episode import WORLD_FALSIFIED, Result, _play
 from .plated import Plated, wrap
 from .refusals import WorldFalsified
@@ -19,12 +27,21 @@ from .refusals import WorldFalsified
 class Plate:
     """A plate over one declaration. Its Counts are facts, so a host may hold them (S1)."""
 
-    __slots__ = ("_plated", "_counts", "_falsifier")
+    __slots__ = ("_plated", "_counts", "_falsifier", "_since", "_memo")
 
     def __init__(self, plated):
         self._plated = plated
         self._counts = Counter(plated.counts)
         self._falsifier = None
+        self._since, self._memo = None, {}
+
+    def _work(self, prior):
+        """The values found under this prior: the last episode's, if its prior was this one, and
+        none otherwise. The prior is held only to be compared with the next one; nothing reads it."""
+        measure = _measure(prior)
+        if measure != self._since:
+            self._since, self._memo = measure, {}
+        return self._memo
 
     def run(self, door):
         """One episode. Refused, as WorldFalsified, once the plate has ended."""
@@ -33,7 +50,8 @@ class Plate:
         plated = self._plated
         # The prior conditions on the Counts and on every falsifying record shipped with them (J26)
         evidence = self._counts + Counter(plated.falsifiers)
-        r = _play(plated.world, C.episode_prior(plated, evidence), door)
+        prior = C.episode_prior(plated, evidence)
+        r = _play(plated.world, prior, door, self._work(prior))
         if r.status == WORLD_FALSIFIED:
             self._falsifier = r.record
             return r

@@ -56,7 +56,9 @@ p.counts()               # a Counter of records: facts, which a host may hold (S
 print(p.disclosure())    # what no plate of this World can ever learn (S15), as text
 ```
 
-A plate keeps its Counts and nothing else. A report of probability zero, in the episode or in the
+A plate keeps its Counts and nothing else that means anything. What its lookahead found under one
+prior is kept while the prior recurs and dropped before an episode whose prior moved, so a plate
+that learns does not grow with its episodes, and a host has nothing to clear. A report of probability zero, in the episode or in the
 after-report, ends the plate: `r.status` is `WORLD_FALSIFIED`, the Counts stay as they were,
 `p.falsifier()` holds the record that did it, and a further `run` raises `WorldFalsified`. A World
 with no Global plays on a plate exactly as under `run`. `run` itself takes a v0 World; a World
