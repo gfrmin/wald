@@ -68,9 +68,13 @@ class World:
 
 def _total(table, omega, what):
     """A table over Omega is a function on Omega: defined at every state, and at nothing else.
-    A gap is a state the pack forgot; a stranger is a state that is not in the small world."""
-    missing = [state for state in omega if state not in table]
-    strangers = [state for state in table if state not in omega]
+    A gap is a state the pack forgot; a stranger is a state that is not in the small world.
+    Both sides are asked as sets, each built once per call: `omega` and a kernel's states are
+    tuples, and a test of membership in a tuple is a scan, so asking them as they come is
+    |Omega|^2 (brief 011). The lists keep each side's order, so a refusal reads as it always has."""
+    here, said = set(omega), set(table)
+    missing = [state for state in omega if state not in said]
+    strangers = [state for state in table if state not in here]
     if missing:
         raise Refused(TABLE_SHAPE, what + " says nothing at " + ", ".join(repr(s) for s in missing))
     if strangers:
