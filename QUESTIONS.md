@@ -186,7 +186,7 @@ words); it is a one-line change on my side.
 
 ## Q6 (brief 006). `WIRE` is named for "a reply out of order"; a malformed wire spec has no name
 
-**Status: open, a reading taken; the kit is green under any reading.**
+**Status: closed at kit v0.14.** INTERFACE adopts the reading below as it stands: a decimal is FLOAT, and every other wire fault, an unknown key included, is WIRE. L4 judges it over the wire and L6 in process.
 
 **The page.** `laws/INTERFACE.md`, kit v0.10: *"An unknown op answers `{"refused":"UNKNOWN_OP"}`;
 an unknown world id `{"refused":"UNKNOWN_WORLD"}`; a reply out of order is `WIRE`."* It says every
@@ -272,7 +272,7 @@ the kit draws, the two readings are the same.
 
 ## Q9 (brief 007). The falsifying record of a report inside an episode has no end, and S13 checks it as a record
 
-**Status: answered at kit v0.12:** SURFACE v0.2 V2.7 makes a prefix `[draws, None, None]` a
+**Status: closed at kit v0.14** (second half: `Plate.falsifier()` is the plate's own falsifying record; the shipped ones are the declaration's and are not returned, judged by L6). **Answered at kit v0.12:** SURFACE v0.2 V2.7 makes a prefix `[draws, None, None]` a
 falsifying record, `counts_check.realisable` accepts it, and K7 checks it ships. The second half
 below -- what `Plate.falsifier()` returns on a plate that was shipped falsifiers -- INTERFACE's kit
 v0.12 section does not say; mine still returns only the plate's own. One case of the first half is
