@@ -7,8 +7,9 @@ Bans added 2026-10-01, each with the witness that forced it (cage/lint_poisons/,
 - `__builtins__`, `__loader__`, `__spec__`, `__dict__`, as a name or an attribute. Witness builtins_open:
   `getattr(__builtins__, "open")` reaches the banned open() without calling it by its bare name.
 - `/proc` in any string. Witness proc_literal: the process's own environment is a file under /proc.
-The lint is the second line. The first is the kit's: the seed is read and spent before the kernel is imported
-(wald-charter laws/kit_seed.py, kit v0.14), so none of it is left in the process to find."""
+The lint is not a sandbox; it is the last line. Before it: the kit reads and spends the seed before the kernel is imported
+(wald-charter laws/kit_seed.py, kit v0.14), and cage.yml runs the kernel as a user with no sudo, who cannot read the
+runner, which holds the job's secrets."""
 import ast, pathlib, sys
 ALLOW = {"wald", "__future__", "fractions", "dataclasses", "typing", "enum", "itertools", "functools", "collections", "abc", "operator", "numbers", "math", "ast", "hashlib", "json", "keyword", "pathlib"}
 ONLY_IN = {"pathlib": "datafile.py"}
