@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: master (trusted scripts)
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: the work under judgement (data, not code we trust)
         uses: actions/checkout@v4
         with:
@@ -57,3 +59,7 @@ jobs:
           py=$(command -v python3)
           sudo -u wald-kit env -i -C /opt/kit PATH="$(dirname "$py"):/usr/bin:/bin" HOME=/opt/kit \
             "$py" charter/laws/kit.py --impl pr/src --worlds 300 --seed-file /opt/kit/kit_seed
+      # env -i takes RUNNER_TRACKING_ID away from wald-kit's processes, so the runner's own clean-up would miss one left behind.
+      - name: nothing of wald-kit outlives the kit
+        if: always()
+        run: sudo pkill -KILL -u wald-kit || true
