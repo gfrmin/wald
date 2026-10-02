@@ -492,7 +492,16 @@ And Q11's `KeyError`. The first is 27 of the 13,445 mutations in `tests/test_sur
 
 ## Q18 (a host's measurement). `declare` at 20,736 states takes 168–222 s against 12 s for the first decision
 
-**Status: open: a measurement, no fix proposed.**
+**Status: answered by brief 011 (`b/011-total`): no page or kit change; `_total` asks both sides as sets.** The
+author's measurement, 2026-10-02, on steel, `wald.declare(wald.load_pack(text, root))` on `world/turn-three` (c514864f),
+master `b47fe2d` against master with `b/011-total` merged:
+
+| pack | master | brief 011 | census | `Plate.values()` at the prior |
+|---|---|---|---|---|
+| `renavon.py` | 223.0 s | 11.9 s | `data` 7, `elicited` 20,997 — identical | identical text (sha256 `75b7887f6032…`) |
+| `renavon_at_breakeven.py` | 162.8 s | 10.8 s | `data` 7, `elicited` 20,951 — identical | identical text (sha256 `cd318aac5086…`) |
+
+Under the brief's 60 s. The next frame is the Score, as the profile below says; it is not this brief's.
 
 **The pack.** The Renavon World, turn two (`gfrmin/renavon-monorepo`, branch `world/turn-two`, e2eed4f0,
 `world/packs/renavon.py`, 964,074 bytes): 81 Global values, 20,736 states, eight `keep` terminals, four `window` acts and two
