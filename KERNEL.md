@@ -199,7 +199,10 @@ new prior equals the World's — exact equality of the beliefs — and a table o
 The World's table is only ever handed to an episode that starts at the World's prior, so it holds
 only beliefs that prior reaches, as under `run`: a learning plate's later episodes never grow it,
 and a plate that has learned leaves it as a fresh plate would. Nothing of a past episode survives
-the next one's start except there, where `run` would have left it.
+the next one's start except there, where `run` would have left it. Measured on the arena's
+`omniscience-p1-c0` pack with its Counts (and their Score) removed, 1,152 Global values, 100 fresh
+plates of one episode each: 10.9 s on v0.2.1, 36.6 s after brief 010, 9.9 s after this, the same
+results and 1.2 GB peak in all three.
 Measured (`tools/plate_memory.py`, appendix A on 100 Global values, 200 episodes): peak resident
 memory 31.8 / 44.1 / 78.5 MB after 50 / 100 / 200 episodes before, 23.1 / 23.3 / 23.5 MB after,
 at the same seconds an episode; `tests/test_plate_memo.py` plays the table kept and dropped and gets
