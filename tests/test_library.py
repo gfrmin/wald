@@ -76,7 +76,7 @@ class TheFourteenNames(unittest.TestCase):
     def test_law_is_the_dict_not_the_module(self):
         import wald.law                                     # noqa: F401 -- the submodule, again
         self.assertEqual(wald.law, {"charter": "charter-v0.2", "surface": "surface-v0.2",
-                                    "kit": "kit-v0.13"})
+                                    "kit": "kit-v0.14"})
 
     def test_digest_is_the_function_from_a_fresh_import(self):
         """Kit v0.13 found `wald.digest` the submodule, and only once the adapter had imported it.

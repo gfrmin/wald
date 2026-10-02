@@ -186,7 +186,7 @@ words); it is a one-line change on my side.
 
 ## Q6 (brief 006). `WIRE` is named for "a reply out of order"; a malformed wire spec has no name
 
-**Status: open, a reading taken; the kit is green under any reading.**
+**Status: closed at kit v0.14.** INTERFACE adopts the reading below as it stands: a decimal is FLOAT, and every other wire fault, an unknown key included, is WIRE. L4 judges it over the wire and L6 in process.
 
 **The page.** `laws/INTERFACE.md`, kit v0.10: *"An unknown op answers `{"refused":"UNKNOWN_OP"}`;
 an unknown world id `{"refused":"UNKNOWN_WORLD"}`; a reply out of order is `WIRE`."* It says every
@@ -272,7 +272,7 @@ the kit draws, the two readings are the same.
 
 ## Q9 (brief 007). The falsifying record of a report inside an episode has no end, and S13 checks it as a record
 
-**Status: answered at kit v0.12:** SURFACE v0.2 V2.7 makes a prefix `[draws, None, None]` a
+**Status: closed at kit v0.14** (second half: `Plate.falsifier()` is the plate's own falsifying record; the shipped ones are the declaration's and are not returned, judged by L6). **Answered at kit v0.12:** SURFACE v0.2 V2.7 makes a prefix `[draws, None, None]` a
 falsifying record, `counts_check.realisable` accepts it, and K7 checks it ships. The second half
 below -- what `Plate.falsifier()` returns on a plate that was shipped falsifiers -- INTERFACE's kit
 v0.12 section does not say; mine still returns only the plate's own. One case of the first half is
@@ -487,3 +487,33 @@ And Q11's `KeyError`. The first is 27 of the 13,445 mutations in `tests/test_sur
 
 **Which gate check.** That differential, run by the gate against the reference alone: any exception that is not
 `Refused` on a mutation of the corpus fails the gate.
+
+---
+
+## Q18 (a host's measurement). `declare` at 20,736 states takes 168–222 s against 12 s for the first decision
+
+**Status: open: a measurement, no fix proposed.**
+
+**The pack.** The Renavon World, turn two (`gfrmin/renavon-monorepo`, branch `world/turn-two`, e2eed4f0,
+`world/packs/renavon.py`, 964,074 bytes): 81 Global values, 20,736 states, eight `keep` terminals, four `window` acts and two
+`pursue` acts with an ending outcome each, horizon 6, depth 2, Counts shipped with their Score. On `v0.2.1`, on steel, `wald.declare(wald.load_pack(text,
+root))` took 168–222 s over turn one's and turn two's runs (222.07 s on turn one's World), and the first decision
+11.83 s.
+
+**The profile** (cProfile, 2026-10-01, the two calls profiled separately; times include the profiler's overhead):
+
+| call | wall | `world.py:69(_total)` | its calls | per call |
+|---|---|---|---|---|
+| `load_pack` | 152.6 s | 130.1 s tottime | 32 | 4.07 s |
+| `declare` | 95.7 s | 83.1 s tottime | 16 | 5.19 s |
+| together | 248.3 s | 213.2 s (86%) | 48 | |
+
+**The hot check is `_total`**: "a table over Omega is a function on Omega", run on every terminal's utility,
+every act's kernel and every ending outcome's `u_end`: 8 + 6 + 2 = 16 tables in this pack. `load_pack` builds the World twice
+(`surface.py:569 check` → `learned.py:265` → `world.build` ×2), and `declare` builds it a third time
+(`plated.py:77 build` → `world.build`), so the 16 checks run three times. In each, `omega` is `prior.carrier()`, a
+tuple, and a kernel's table is `kernel.states()`, also a tuple, so `state not in omega` and `state not in table`
+are linear scans. A check therefore costs up to |Ω|² = 20,736² ≈ 4.3 × 10⁸ comparisons of state tuples.
+
+Nothing else is close. The next frame is the Score (`counts.py:118`, 10.4 s), then `learned.py:67 split` (5.0 s)
+and `surface.py:135 value_of` (4.8 s).

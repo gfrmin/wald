@@ -14,12 +14,15 @@ jobs:
     steps:
       - name: master (trusted scripts)
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: the work under judgement (data, not code we trust)
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           path: pr
           fetch-depth: 0
+          persist-credentials: false
       - name: protected paths untouched
         if: github.event_name == 'pull_request_target'
         run: |
@@ -30,7 +33,33 @@ jobs:
         run: sh cage/fetch_charter.sh
       - name: imports
         run: python3 cage/lint_imports.py pr/src/wald
-      - name: kit
+      - name: imports refuse the poisons
+        run: |
+          for d in cage/lint_poisons/*/; do
+            if python3 cage/lint_imports.py "$d" > /dev/null; then echo "the lint passes a poison: $d"; exit 1; fi
+          done
+      # The work under judgement runs as wald-kit, a user made here with no sudo, on copies wald-kit owns. The runner's own
+      # user can sudo, and the runner holds the job's secrets in its memory: code running as that user could read KIT_SEED
+      # there, whatever the kit does with its copy. The seed reaches wald-kit as a file the kit reads and deletes before it
+      # imports the work, and it is never in the environment of a process that runs that work (laws/kit_seed.py, kit v0.14).
+      # These two steps run no PR code.
+      - name: a user with no sudo, and the kit's copies
+        run: |
+          sudo useradd --system --no-create-home --shell /usr/sbin/nologin wald-kit
+          sudo mkdir -m 700 /opt/kit
+          sudo cp -r pr charter /opt/kit/
+          sudo rm -rf /opt/kit/pr/.git /opt/kit/charter/.git
+          sudo chown -R wald-kit:wald-kit /opt/kit
+      - name: seed
         env:
           KIT_SEED: ${{ secrets.KIT_SEED }}
-        run: python3 charter/laws/kit.py --impl pr/src --worlds 300
+        run: printf '%s' "$KIT_SEED" | sudo install -o wald-kit -g wald-kit -m 600 /dev/stdin /opt/kit/kit_seed
+      - name: kit
+        run: |
+          py=$(command -v python3)
+          sudo -u wald-kit env -i -C /opt/kit PATH="$(dirname "$py"):/usr/bin:/bin" HOME=/opt/kit \
+            "$py" charter/laws/kit.py --impl pr/src --worlds 300 --seed-file /opt/kit/kit_seed
+      # env -i takes RUNNER_TRACKING_ID away from wald-kit's processes, so the runner's own clean-up would miss one left behind.
+      - name: nothing of wald-kit outlives the kit
+        if: always()
+        run: sudo pkill -KILL -u wald-kit || true

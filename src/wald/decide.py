@@ -11,7 +11,8 @@ for a measure, a menu and an n is looked up (`world.work`). Nothing is approxima
 no sample, no bound, no float. The argmax below is the page's, written once."""
 from fractions import Fraction
 
-from .belief import _count_reset, _dot, _mass, _measure, _split
+from .belief import _count_reset, _count_restore, _counted, _dot, _mass, _measure, _split
+from .same import Sameness
 
 FLOOR = "floor"
 STRUCK_N = "struck_n"
@@ -88,6 +89,28 @@ def value(belief, world, n, used=frozenset()):
 def decide(belief, world, n, used=frozenset()):
     """decide_n(b,M). The single exit: only this turns a belief into an act (S1)."""
     return _solve(belief, world, n, used)[1][1]
+
+
+def quantities(belief, world):
+    """Section 2's quantities at a belief, the full menu and n = min(d, N), the floor's depth at an
+    episode's first step (E3), for a host to read and not to choose by (kit v0.14): n; V_0; E_b[u]
+    for each terminal act; Q_n(b,M,k) for each observational act, none when n = 0; and V_n with
+    decide_n. Every act gets its own Q_n, a copy of an earlier act included: `same` is for the
+    scan below a decision, and here no entry is skipped. The act is `_value`'s answer, the one
+    lookahead's, not a second argmax. The memo is made for this call and dropped with it: the
+    lookahead's values are kept by whoever plays the World (briefs 004, 010), not by a report."""
+    counted = _counted()                        # E6 counts thoughts, and this is not one
+    same, memo = Sameness(world), {}
+    measure = _measure(belief)
+    mass = _mass(measure)
+    n = min(world.d, world.N)
+    reps = tuple(world.T)
+    T = [(t, _dot(measure, world.T[t]) / mass) for t in reps]
+    O = [(name, _q(measure, mass, world, name, n, frozenset(), same, memo, reps) / mass)
+         for name in world.menu(frozenset())] if n > 0 else []
+    v, act = _value(measure, world, n, frozenset(), same, memo, reps)
+    _count_restore(counted)
+    return n, max([u for _, u in T]), T, O, v / mass, act
 
 
 def _best(measure, world, menu):
