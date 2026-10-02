@@ -54,7 +54,7 @@ they are the kernel's, and nothing in `API.md` names them.
 | `wald/disclose.py` | S15: the Global values no realisable design separates, and the classes of them that settle something an act can feel; it refuses nothing |
 | `wald/ship.py` | the three names a host ships Counts with — `digest`, `score` written as a pack writes it, `e7` as a `Display` — each a conversion around `canonical`, `counts` and `digits`, so a host needs no kit (brief 009) |
 | `wald/digits.py` | whole numbers of any length read from and written to decimal digits a piece at a time, so a Score of tens of thousands of digits is read and written without lifting Python's interpreter-wide limit on integer conversion, which the kernel never touches |
-| `wald/plate.py` | `Plate`: its Counts, its falsifying record and its lookahead's memo, which it drops before any episode whose prior moved (brief 010), and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) — and what a host may ask without playing one: that prior, sealed, and `decide.quantities` at it as text (brief 012) |
+| `wald/plate.py` | `Plate`: its Counts, its falsifying record and its lookahead's memo, which it drops before any episode whose prior moved (brief 010) and which is the World's own while its prior is the World's (brief 014), and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) — and what a host may ask without playing one: that prior, sealed, and `decide.quantities` at it as text (brief 012) |
 | `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, the census of quantities by source, and v0.1's K16 provenance — what sources a cell descends from, so a meta-table cannot be handed one it could not have declared |
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
 | `wald/law.py` | the three tags this package was judged under, in one place, so a consumer can print which law its wald obeys and the kit can hold it to the lock |
@@ -191,6 +191,18 @@ table is kept, as before. The prior is held for that comparison and read by noth
 of a past episode's belief survives the next one's start** — a tightening of S13's "no cache with a
 meaning", since the table's keys are beliefs and a belief on a learning plate encodes
 P(Global | Counts). `step` takes the plate's table and `decide` never sees where it came from.
+**While the plate's prior is the World's, the table is the World's (brief 014).** A fresh plate
+starts at the World's prior, and so does one whose records moved nothing; the values under that
+prior are `run`'s values, since `_value` reads only the World and the belief, and brief 013's keys
+write each measure one way. So when the prior moves, the plate takes `World.work()`'s table if the
+new prior equals the World's — exact equality of the beliefs — and a table of its own otherwise.
+The World's table is only ever handed to an episode that starts at the World's prior, so it holds
+only beliefs that prior reaches, as under `run`: a learning plate's later episodes never grow it,
+and a plate that has learned leaves it as a fresh plate would. Nothing of a past episode survives
+the next one's start except there, where `run` would have left it. Measured on the arena's
+`omniscience-p1-c0` pack with its Counts (and their Score) removed, 1,152 Global values, 100 fresh
+plates of one episode each: 10.9 s on v0.2.1, 36.6 s after brief 010, 9.9 s after this, the same
+results and 1.2 GB peak in all three.
 Measured (`tools/plate_memory.py`, appendix A on 100 Global values, 200 episodes): peak resident
 memory 31.8 / 44.1 / 78.5 MB after 50 / 100 / 200 episodes before, 23.1 / 23.3 / 23.5 MB after,
 at the same seconds an episode; `tests/test_plate_memo.py` plays the table kept and dropped and gets

@@ -10,6 +10,11 @@ episode whose prior differs from the last one's, what was found is dropped, and 
 belief of a past episode once the next begins. Where the prior cannot move -- no Global, or records
 that move none -- the values are kept for the plate's life, as `run` keeps the World's.
 
+While the prior is the World's -- a fresh plate's, or one whose records moved nothing -- the values
+are the World's own, `run`'s: the same values under the same belief, so a fresh plate starts from
+what was found before it (brief 014). The World's are only ever handed to an episode that starts at
+the World's prior, so they hold only beliefs that prior reaches, where `run` would leave them.
+
 One episode is the prior from the Counts, v0's loop at the floor unchanged, the terminal fired,
 then -- if an After-act is declared -- its report, asked of the door by name after the fire and
 taken whenever declared (S12, J27). `decide` never sees the After-act. The record enters the
@@ -20,6 +25,7 @@ from collections import Counter
 from . import counts as C
 from . import disclose
 from .belief import _condition, _measure
+from .belief import prior as world_prior
 from .decide import quantities
 from .digits import rational
 from .display import render
@@ -40,11 +46,14 @@ class Plate:
         self._since, self._memo = None, {}
 
     def _work(self, prior):
-        """The values found under this prior: the last episode's, if its prior was this one, and
-        none otherwise. The prior is held only to be compared with the next one; nothing reads it."""
+        """The values found under this prior: the last episode's, if its prior was this one; the
+        World's, which are `run`'s, if this prior is the World's; and none otherwise. The prior is
+        held only to be compared with the next one; nothing reads it."""
         measure = _measure(prior)
         if measure != self._since:
-            self._since, self._memo = measure, {}
+            world = self._plated.world
+            self._since = measure
+            self._memo = world.work()[1] if measure == _measure(world_prior(world)) else {}
         return self._memo
 
     def run(self, door):
