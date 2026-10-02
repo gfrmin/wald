@@ -6,17 +6,22 @@ Underneath those three verbs, and replacing them and nothing else, is E2's fast 
 mass unnormalised. `_split` is `push` and `condition` in one pass, with the division left out
 because the lookahead multiplies it straight back in; `_dot` is expectation over what comes out.
 The belief a host or an episode holds is still normalised, and still changes only by `condition`.
+Under the lookahead that mass is a vector of ints over one denominator (`_integers`), and the
+World's tables are ints too (`scaled.py`, brief 013), so those three add and multiply `int`s.
 
 The operations counted here are the operations of CHARTER v0.1 E6: one for each arithmetic
 operation on Q that `push`, `condition` and expectation perform in the evaluator that runs. In
 this evaluator those three are `_split`, `_dot` and `_mass`, so every multiplication and addition
-those three do is counted, and no thought passes through the public `push` and `expect` at all.
+those three do on the page's numbers is counted, and no thought passes through the public `push`
+and `expect` at all. A multiplication that only changes units -- a part at K(o|w) = 1 times D_k,
+under brief 013's integer weights -- is not one of the page's operations, and is not counted.
 The count is a scoreboard measurement -- `decide` zeroes it as a thought begins and never reads
 it; `episode.run` reads it when the thought is done. It is not a clock and it is in no value.
 """
 import json
 from fractions import Fraction
 from itertools import product
+from math import lcm
 
 from .digits import rational
 from .display import render
@@ -117,6 +122,17 @@ def _measure(belief):
     return {state: p for state, p in belief._w.items() if p}
 
 
+def _integers(measure):
+    """E2's measure as a vector of ints `a` over one denominator `c`, the lcm of its denominators:
+    a representative that is a function of the measure alone, so two equal beliefs bring the
+    lookahead the same numbers (brief 013). `decide._value` takes the gcd of c and a out at every
+    node; here it is already one, c being the least common denominator. Making it is a change of
+    units, not an operation of the page."""
+    c = lcm(*{p.denominator for p in measure.values()})
+    a = {state: p.numerator * (c // p.denominator) for state, p in measure.items()}
+    return a, c
+
+
 def _tally(done):
     """One integer add per call, not per operation: counting must not be dearer than the
     arithmetic it counts."""
@@ -124,9 +140,10 @@ def _tally(done):
     _OPS += done
 
 
-def _split(measure, rows):
+def _split(measure, rows, full):
     """`push` and `condition` in one pass, unnormalised: for every outcome of positive mass, the
-    mass m(w) K_k(o|w) over the states that can emit it.
+    mass m(w) K_k(o|w) over the states that can emit it -- here m(w) R_k(o|w), where the row is
+    R_k = D_k K_k in ints and `full` is D_k, so every part is D_k times the page's.
 
     Dividing each part by its own total would give P_b(o|k) and the posterior b|k,o. The value of
     the branch is P_b(o|k) V(b|k,o), which multiplies that total straight back in, so the division
@@ -141,13 +158,11 @@ def _split(measure, rows):
             part = parts.get(o)
             if part is None:
                 part = parts[o] = {}
-            # m(w) K(o|w). Not multiplying by one is arithmetic, not a special case for a
-            # kernel that happens to be deterministic: it is the same number either way -- and
-            # an operation not performed is an operation not counted (E6).
-            if q == 1:
-                part[state] = p
-            else:
-                part[state] = p * q
+            part[state] = p * q
+            # m(w) K(o|w) is an operation of the page unless K(o|w) is one: then the page's
+            # product is m(w) itself, and p * D_k only keeps the part in the units of its
+            # siblings (E6: a change of units is not push, condition or expectation).
+            if q != full:
                 done += 1
     _tally(done)
     return parts
@@ -157,13 +172,13 @@ def _dot(measure, f):
     """sum_w m(w) f(w). Expectation when the mass is one, and what stands in its place when it
     is not: mass(m) E_{m/mass(m)}[f]."""
     _tally(2 * len(measure))                      # one product and one sum per state (E6)
-    return sum([p * f[state] for state, p in measure.items()], Fraction(0))
+    return sum([p * f[state] for state, p in measure.items()])
 
 
 def _mass(measure):
     """sum_w m(w). Needed only where a price is paid, so it is asked for and not carried."""
     _tally(len(measure))
-    return sum(measure.values(), Fraction(0))
+    return sum(measure.values())
 
 
 def condition(belief, world, obs):

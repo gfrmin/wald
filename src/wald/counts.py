@@ -1,8 +1,8 @@
 """What persists between episodes, and what it is worth: CHARTER v0.2 sections 4 and 7.
 
 The prior of an episode is P(Global | Counts) P(local | Global), and P(Global | Counts) is v0's
-Bayes' theorem applied to each record: `belief._update`, the one update, with the record's
-likelihood L(record | Global) raised to its count. The record is the unit, never the draw, because
+Bayes' theorem applied to the records: `belief._update`, the one update, once, with every record's
+likelihood L(record | Global) raised to its count and multiplied in before the one normalisation. The record is the unit, never the draw, because
 the draws of one episode share its local, which L sums out. Nothing is fitted, nothing is
 forgotten, and a multiset has no order (C22, C23).
 
@@ -41,26 +41,44 @@ def likelihood(plated, record, g):
 
 class _Records:
     """The likelihood of a multiset of records, as `_update` reads a kernel: at a Global value,
-    a token (record, count) weighs L(record | g) to the count."""
+    the tokens (record, count) weigh the product of L(record | g) to each count."""
 
     __slots__ = ("plated",)
 
     def __init__(self, plated):
         self.plated = plated
 
-    def at(self, g, token):
-        record, n = token
-        return likelihood(self.plated, record, g) ** n
+    def at(self, g, tokens):
+        total = Fraction(1)
+        for record, n in tokens:
+            total *= likelihood(self.plated, record, g) ** n
+            if not total:
+                break
+        return total
 
 
 def posterior_global(plated, counts):
-    """P(Global | Counts), a Belief over the Global values. A multiset no Global value can have
-    written raises WorldFalsified, as any observation of zero mass does."""
+    """P(Global | Counts), a Belief over the Global values: one `_update` under the product of the
+    records' likelihoods, so the posterior is normalised once and not once a record (brief 013) --
+    the same rationals, since conditioning on two tokens is conditioning on their product (C2). A
+    multiset no Global value can have written raises WorldFalsified, as any observation of zero
+    mass does, naming the first record after which no Global value has mass."""
     b = _sealed(dict(plated.pg))
-    lik = _Records(plated)
-    for token in counts.items():
-        b = _update(b, lik, token)
-    return b
+    tokens = tuple(counts.items())
+    if not tokens:
+        return b
+    try:
+        return _update(b, _Records(plated), tokens)
+    except WorldFalsified:
+        raise WorldFalsified("the World gives " + repr(_last(plated, tokens)) + " no mass under this belief")
+
+
+def _last(plated, tokens):
+    """The token in whose wake no Global value is left: for each value, the first record it
+    cannot have written; the last of those. Asked only once the World is falsified."""
+    first = {g: next(i for i, (record, n) in enumerate(tokens) if not likelihood(plated, record, g) ** n)
+             for g in plated.pg}
+    return tokens[max(first.values())]
 
 
 def episode_prior(plated, counts):

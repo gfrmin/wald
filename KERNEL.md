@@ -1,6 +1,6 @@
 # KERNEL.md — every module, and its one reason to exist
 
-The kernel of CHARTER v0 and SURFACE v0, of their amendments v0.1, and of their amendments v0.2. Twenty-six
+The kernel of CHARTER v0 and SURFACE v0, of their amendments v0.1, and of their amendments v0.2. Twenty-seven
 modules; if one of them cannot keep its line here, it should not exist. Standard library only, exact rationals
 only, and the list in `cage/lint_imports.py` is the whole of what `src/wald` may import.
 
@@ -44,11 +44,12 @@ they are the kernel's, and nothing in `API.md` names them.
 | `wald/display.py` | `Display`: it renders and does nothing else, so a display value cannot reach control flow or a belief (S1) |
 | `wald/belief.py` | the sealed `Belief` and the verbs allowed to touch it — `prior`, `push`, `condition`, `expect`, `report`; the belief update of §2 is written once, here, and so is E2's unnormalised stand-in for the three of them, and so is the operation counter that watches it (v0.1 E6) |
 | `wald/decide.py` | the one `decide`: V₀, Qₙ, Vₙ and the argmax exist here and nowhere else (E5), with E2's fast paths underneath them — and `step`, v0.1's `decide⁺`, which is that same argmax over a menu with θ on the end of it (S8) |
+| `wald/scaled.py` | the World's tables over one common denominator each — U for every utility, u_end and price, D_k for act k's rows — so the lookahead adds and multiplies `int`s on a measure brought to integers per call and keyed exactly as before, and no `Fraction` sum takes a gcd per state (brief 013); the scaling is a change of units, not `push`, `condition` or expectation, so E6, which counts those three's operations on ℚ, does not tally it, and counts every product and sum it counted before |
 | `wald/same.py` | which acts a belief cannot tell apart, so the lookahead evaluates one of each group and J3 takes the first (E2) — it decides sameness and never a value |
 | `wald/episode.py` | `Door` and `run`: the episode of §2 in the page's order, the only place a think act is charged and its operations read, and — through `step` — the only place the floor `min(d, n)` is applied (E3) |
 | `wald/kit_adapter.py` | the `laws/INTERFACE.md` shim: plain dicts in, kernel types out, no logic of its own |
 | `wald/plated.py` | CHARTER v0.2's World: Ω as locals × Globals around a v0 World over the pairs (l, g), the Prior's two factors, the After-act, shipped Counts and their falsifying records — and GLOBAL, AFTER, PLATE, UNSCORED |
-| `wald/counts.py` | the prior from Counts — `belief._update` once per distinct record, the record's likelihood to its count, so it is v0's update and not a second one — S13's realisability as v0's loop has it (a prefix falsifier may end at an ending outcome, since the loop checks zero mass first: Q15), falsifying records as V2.7 has them, **S14's Score as V2.8 corrects it** (a term for every copy of every record *and every falsifying record*) and E7's lines |
+| `wald/counts.py` | the prior from Counts — `belief._update` once, under the product of every record's likelihood to its count, normalised once (brief 013), so it is v0's update and not a second one — S13's realisability as v0's loop has it (a prefix falsifier may end at an ending outcome, since the loop checks zero mass first: Q15), falsifying records as V2.7 has them, **S14's Score as V2.8 corrects it** (a term for every copy of every record *and every falsifying record*) and E7's lines |
 | `wald/canonical.py` | SURFACE v0.2 V2.13: the digest defined by its bytes — V2.13's escape table as a declared table, row for row, the first matching row deciding, so DEL is escaped and `/` is not because the page says so and not because a JSON library does |
 | `wald/disclose.py` | S15: the Global values no realisable design separates, and the classes of them that settle something an act can feel; it refuses nothing |
 | `wald/ship.py` | the three names a host ships Counts with — `digest`, `score` written as a pack writes it, `e7` as a `Display` — each a conversion around `canonical`, `counts` and `digits`, so a host needs no kit (brief 009) |
@@ -314,8 +315,9 @@ A v0.2 state is the pair (l, g) and the v0 World is built over those pairs by `w
 World with no Global is wrapped as one Global value, (), and plays as v0.1 (C21).
 
 **The prior from Counts** is P(Global | Counts) · P(local | Global). P(Global | Counts) is the
-declared P(Global) conditioned by `belief._update` — the one update — once per distinct record,
-under a likelihood that reads L(record | g)^count. L sums the local out over the draws and the
+declared P(Global) conditioned by `belief._update` — the one update — once, under a likelihood
+that reads the product of L(record | g)^count over the records (brief 013: normalising after each
+record gave the same rationals at 2–3× the cost). L sums the local out over the draws and the
 after-report together, because they share the episode's local. A multiset has no order, so C22
 is not a property the code has to keep; it has no way to break it.
 
