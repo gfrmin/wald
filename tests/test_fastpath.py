@@ -12,7 +12,8 @@ from fractions import Fraction as F
 
 import _path
 import world_fixtures as W
-from wald.belief import _dot, _mass, _measure, _split, _update, _weights, expect, prior, push
+from wald.belief import (_dot, _integers, _mass, _measure, _split, _update, _weights, expect, prior,
+                         push)
 from wald.decide import decide, value
 from wald.world import declare
 
@@ -37,13 +38,16 @@ class TheUnnormalisedMeasure(unittest.TestCase):
         for spec in self.worlds(90210, 120):
             world = _world(W.spec(spec["prior"], spec["T"], spec["O"]))
             b = prior(world)
+            a, c = _integers(_measure(b))
             for name, act in world.O.items():
-                parts = _split(_measure(b), act.kernel.rows())
+                ints = world.scaled().O[name]
+                parts = _split(a, ints.rows, ints.full)        # each part over c D_k (brief 013)
                 predictive = {o: p for o, p in push(b, act.kernel).items() if p}
-                self.assertEqual({o: _mass(part) for o, part in parts.items()}, predictive)
+                self.assertEqual({o: F(_mass(part), c * ints.full) for o, part in parts.items()},
+                                 predictive)
                 for o, part in parts.items():
                     mass = _mass(part)
-                    self.assertEqual({w: p / mass for w, p in part.items()},
+                    self.assertEqual({w: F(p, mass) for w, p in part.items()},
                                      _weights(_update(b, act.kernel, o)))
 
     def test_a_part_carries_its_own_weight_so_no_value_is_normalised(self):
@@ -52,11 +56,13 @@ class TheUnnormalisedMeasure(unittest.TestCase):
         divided on the way."""
         world = _world(W.appendix())
         b = prior(world)
-        act = world.O["test"]
-        for o, part in _split(_measure(b), act.kernel.rows()).items():
+        act, sc = world.O["test"], world.scaled()
+        a, c = _integers(_measure(b))
+        for o, part in _split(a, sc.O["test"].rows, sc.O["test"].full).items():
             posterior = _update(b, act.kernel, o)
-            for u in world.T.values():
-                self.assertEqual(_dot(part, u), push(b, act.kernel)[o] * expect(posterior, u))
+            for t, u in world.T.items():
+                self.assertEqual(F(_dot(part, sc.T[t]), c * sc.O["test"].full * sc.unit),
+                                 push(b, act.kernel)[o] * expect(posterior, u))
 
     def test_a_state_of_mass_zero_is_dropped_and_never_comes_back(self):
         K = {"a": {"o": F(1), "x": F(0)}, "b": {"o": F(0), "x": F(1)}}

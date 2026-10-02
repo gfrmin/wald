@@ -6,6 +6,7 @@ from .digits import rational
 from .dist import Dist
 from .kernels import Kernel
 from .same import Sameness
+from .scaled import Scaled
 from .refusals import (COST, DEPTH, DEPTH_PLUS, EMPTY_T, FRACTION, KERNEL_ROW, PRICE, PRIOR,
                        RATE, SHARED_SOURCE, TABLE_SHAPE, TABLE_SOURCE, UNSCORED, ZERO_EVIDENCE,
                        Refused)
@@ -33,10 +34,11 @@ class World:
     """The declaration: Omega through its Prior, the menu M as T then O, and the clock."""
 
     __slots__ = ("prior", "T", "O", "N", "d", "closed", "bottom", "table_sources", "components",
-                 "dplus", "fraction", "rate", "ops", "score", "_work")
+                 "dplus", "fraction", "rate", "ops", "score", "_work", "_scaled")
 
     def __init__(self, prior, T, O, N, d, closed, bottom, table_sources, components, meta):
         self._work = None
+        self._scaled = None
         self.prior = prior
         self.T = T
         self.O = O
@@ -61,6 +63,13 @@ class World:
         if self._work is None:
             self._work = (Sameness(self), {})
         return self._work
+
+    def scaled(self):
+        """The World's tables in the lookahead's integer units (`scaled.py`, brief 013): a fact
+        about the World, built on its first decision, as `work` is."""
+        if self._scaled is None:
+            self._scaled = Scaled(self)
+        return self._scaled
 
     def menu(self, used):
         """M without the `once` acts already executed. T is not here: it never leaves."""

@@ -56,8 +56,8 @@ class AppendixA(unittest.TestCase):
 
     def test_the_cap_and_the_room_it_leaves(self):
         # best(w) = 0 in either state: `treat` in sick, `leave` in well, and no ending outcome.
-        measure = B._measure(self.b)
-        cap = _cap(measure, B._mass(measure), self.w, self.w.menu(frozenset()), F(-8, 5))
+        measure, _ = B._integers(B._measure(self.b))
+        cap = _cap(measure, B._mass(measure), self.w.scaled(), self.w, self.w.menu(frozenset()), F(-8, 5))
         self.assertEqual(cap, F(-1, 2))                       # max(-8/5, 0 - 1/2)
         self.assertEqual(cap - F(-51, 50), F(13, 25))         # ghat
 
@@ -92,8 +92,8 @@ class AppendixB(unittest.TestCase):
         self.assertEqual((value(self.b, self.w, 1), value(self.b, self.w, 2)), (F(-51, 50), F(-479, 500)))
 
     def test_the_cap_and_the_room_it_leaves(self):
-        measure = B._measure(self.b)
-        cap = _cap(measure, B._mass(measure), self.w, self.w.menu(frozenset()), F(-8, 5))
+        measure, _ = B._integers(B._measure(self.b))
+        cap = _cap(measure, B._mass(measure), self.w.scaled(), self.w, self.w.menu(frozenset()), F(-8, 5))
         self.assertEqual(cap, F(-1, 5))                       # max(-8/5, 0 - 1/5)
         self.assertEqual(cap - F(-51, 50), F(41, 50))
 
@@ -126,8 +126,9 @@ class TheCapIsAnUpperBound(unittest.TestCase):
 
     def test_the_cap_is_above_the_exact_value(self):
         b = root(self.w)
-        measure = B._measure(b)
-        cap = _cap(measure, B._mass(measure), self.w, self.w.menu(frozenset()), value(b, self.w, 0))
+        measure, _ = B._integers(B._measure(b))
+        cap = _cap(measure, B._mass(measure), self.w.scaled(), self.w, self.w.menu(frozenset()),
+                   value(b, self.w, 0))
         # best(A) = 100 (the lottery's ending outcome, which A can emit), best(B) = 0.
         self.assertEqual(cap, F(50))
         self.assertGreaterEqual(cap, F(40951, 2000))
