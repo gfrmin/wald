@@ -11,20 +11,24 @@ is the kernel's own and is not a host's to call.
 
 | name | what a host gets |
 |---|---|
-| `declare(spec)` | a World from INTERFACE's World dict, or `Refused` with the name of the clause it breaks |
+| `declare(spec)` | a World from INTERFACE's World dict; a dict that breaks a clause raises `Refused` with its name |
 | `run(world, door)` | one episode against your `Door`: a Result with `acts`, `outcomes`, `status`, `paid`, `thought`, `steps`, `operations`, `final`, `record` |
 | `Door` | the base class you subclass: say what `outcome(act)` reads and what `fire(act)` does |
-| `report(belief, world=None)` | a belief as a `Display` — text, and nothing else |
+| `report(belief, world=None, over=None)` | a belief as a `Display` — text, and nothing else; with `over=[component, …]`, its marginal on those components |
 | `Display` | renders with `str()`; every comparison, arithmetic, `bool`, `float`, `len` and index raises `TypeError` |
 | `refusals` | `Refused` (with `.name`), `WorldFalsified`, `ObsSpent`, and every refusal name as a constant |
 | `load_pack(text, data_dir)` | a pack's text elaborated to a World spec, ready for `declare` — CHARTER v0.2's dict for a pack that declares what is learned; the pack is parsed, never run |
 | `from_json(text)` | the wire's World spec to INTERFACE's dict: `"p/q"` strings to rationals, `ops` keys to ints |
 | `to_json(result, world)` | a Result as JSON: rationals as `"p/q"`, and the final belief as `report`'s text |
 | `law` | `{"charter", "surface", "kit"}`: the signed pages and the kit this package was judged under |
-| `plate(world)` | a Plate: `run(door)` plays one episode from the prior its Counts give, `counts()`, `falsifier()`, and `disclosure()` as a `Display` |
+| `plate(world)` | a Plate: `run(door)` plays one episode from the prior its Counts give, `counts()`, `falsifier()`, `disclosure()` as a `Display`, `prior()` the sealed belief the next episode starts from, and `values()` what its first decision weighs, as a `Display` |
 | `digest(counts, falsifiers=())` | SURFACE v0.2 V2.13's digest of Counts and falsifying records: lowercase hex, the `sha256` a pack writes |
 | `score(world, counts, falsifiers=())` | V2.8's Score of them under `world`, as `declare` returned it, written as a pack writes the cell: `"p/q"`, or `"p"` when q is 1, in decimal digits however many |
 | `e7(world, counts)` | CHARTER v0.2 E7's lines as a `Display`: for every draw, by the history that led to it, the total variation between what Counts saw and the posterior predictive, each an exact rational |
+
+**Every verb refuses by raising.** `declare`, `load_pack`, `from_json` and `report` raise
+`Refused`, whose `.name` is the clause that refused; a plate whose World was falsified
+raises `WorldFalsified` from `run`, `prior` and `values`. No verb returns a refusal as a value.
 
 There is no `push`, `condition`, `expect` or `decide` among them. The Score comes back as text:
 it is a measurement a pack writes and the kernel checks, not a number a host acts on. A host never holds a
@@ -56,11 +60,74 @@ p.counts()               # a Counter of records: facts, which a host may hold (S
 print(p.disclosure())    # what no plate of this World can ever learn (S15), as text
 ```
 
-A plate keeps its Counts and nothing else. A report of probability zero, in the episode or in the
+A plate keeps its Counts and nothing else that means anything. What its lookahead found under one
+prior is kept while the prior recurs and dropped before an episode whose prior moved, so a plate
+that learns does not grow with its episodes, and a host has nothing to clear. A report of probability zero, in the episode or in the
 after-report, ends the plate: `r.status` is `WORLD_FALSIFIED`, the Counts stay as they were,
 `p.falsifier()` holds the record that did it, and a further `run` raises `WorldFalsified`. A World
 with no Global plays on a plate exactly as under `run`. `run` itself takes a v0 World; a World
 that declares what is learned is played on a plate.
+
+## What a host may ask of a plate
+
+Four things a report needs, each a `Display` or a sealed belief, so none of them is a number a host
+can compute with (S1). `p.prior()` is the belief the next `run` starts from: P(Global | Counts) ·
+P(local | Global), the Counts being those the declaration shipped, their falsifying records, and
+the plate's own. `report(belief, world, over=[...])` is its marginal on the components named, in
+that order: one line per value of positive mass, in the order of the product of the components'
+declared values — the values as a compact JSON array, then the mass as a pack writes a cell. A list
+that is empty, names a component twice, or names something the World does not declare in `locals`
+or `globals` raises `Refused` named `UNKNOWN_NAME`; a v0 World declares no component.
+`p.values()` is CHARTER v0 §2's quantities at that belief, with the full menu and n = min(d, N):
+`n`; `V_0`; `T <name> <E_b[u]>` per terminal act; `O <name> <Q_n> <Q_n − V_0>` per observational
+act, a copy of another included; and `V_n <V_n> <decide_n>`, the act the next episode's first
+decision at the floor takes. It names that act and fires nothing: only `run` fires, through the
+door. In a World with a think act the episode may think first; `values` does not.
+
+Appendix A of CHARTER v0.2 after one right grade, run, not typed (`tests/test_host_reports.py`
+runs this block as it stands here):
+
+```python
+import wald
+
+with open("appendix_a.py", encoding="utf-8", newline="") as f:
+    world = wald.declare(wald.load_pack(f.read(), "."))
+
+
+class Question(wald.Door):
+    def __init__(self, answer, report):
+        self.answer, self.report = answer, report
+
+    def outcome(self, act):
+        return self.report if act == "ask" else self.answer
+
+    def fire(self, act):
+        pass
+
+
+p = wald.plate(world)
+p.run(Question("a1", "a1"))
+print(wald.report(p.prior(), world, over=["rel"]))       # the posterior over the Globals
+print(wald.report(p.prior(), world, over=["answer"]))    # a component's marginal
+print(p.values())                                       # V_0, each act's Q_1 and Q_1 - V_0, and the next act
+```
+
+```
+["9/10"] 3/5
+["3/5"] 2/5
+["a1"] 1/2
+["a2"] 1/2
+n 1
+V_0 0
+T "say a1" -1/2
+T "say a2" -1/2
+T "abstain" 0
+O "ask" 17/50 17/50
+V_n 17/50 "ask"
+```
+
+The right grade moves the reliability from 1/2 each to 3/5 and 2/5, so the next episode's `ask`
+is worth 17/50 rather than 1/4. The last line is the act `run` will take first.
 
 ## Declaring what is learned, in a pack (SURFACE v0.2)
 
@@ -189,7 +256,7 @@ A session on CHARTER v0.1's Appendix B, run, not typed (`>` the client, `<` the 
 
 ```
 > {"op": "hello"}
-< {"law": {"charter": "charter-v0.2", "surface": "surface-v0.2", "kit": "kit-v0.13"}}
+< {"law": {"charter": "charter-v0.2", "surface": "surface-v0.2", "kit": "kit-v0.14"}}
 > {"op": "declare", "spec": {"prior": {"sick": "1/5", "well": "4/5"}, "T": {"treat": {"sick": "0", "well": "-2"}, "leave": {"sick": "-10", "well": "0"}}, "O": {"test": {"K": {"sick": {"+": "9/10", "-": "1/10"}, "well": {"+": "1/5", "-": "4/5"}}, "price": "1/2", "once": true, "ends": {}}, "scan": {"K": {"sick": {"y": "9/10", "n": "1/10"}, "well": {"y": "2/5", "n": "3/5"}}, "price": "1/5", "once": true, "ends": {}}}, "N": 2, "d": 1, "dplus": 2, "fraction": "1/2", "rate": "1/1000", "ops": {"1": "100", "2": "200"}, "closed": true, "table_sources": {"prior": "data", "utility": "elicited", "price": "elicited", "horizon": "elicited", "depth": "elicited", "kernels": {"test": ["data"], "scan": ["data"]}, "dplus": "elicited", "fraction": "elicited", "cost": "elicited", "rate": "elicited"}}}
 < {"ok": true, "world": 1}
 > {"op": "run", "world": 1}
