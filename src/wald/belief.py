@@ -14,12 +14,15 @@ those three do is counted, and no thought passes through the public `push` and `
 The count is a scoreboard measurement -- `decide` zeroes it as a thought begins and never reads
 it; `episode.run` reads it when the thought is done. It is not a clock and it is in no value.
 """
+import json
 from fractions import Fraction
+from itertools import product
 
 from .digits import rational
 from .display import render
 from .obs import check_unspent, spend
-from .refusals import WorldFalsified
+from .plated import Plated
+from .refusals import UNKNOWN_NAME, Refused, WorldFalsified
 
 _SEAL = object()
 
@@ -30,6 +33,12 @@ def _count_reset():
     """E6: the thought starts here. `decide` calls this and reads nothing."""
     global _OPS
     _OPS = 0
+
+
+def _count_restore(done):
+    """Put the count back where it was: a report's arithmetic is not a thought (`decide.quantities`)."""
+    global _OPS
+    _OPS = done
 
 
 def _counted():
@@ -172,16 +181,49 @@ def _condition(belief, kernel, obs):
     return posterior
 
 
-def report(belief, world=None):
+def report(belief, world=None, over=None):
     """Render a belief for display. What comes back has no operations (S1).
 
     Given the World as well, it renders what the World predicted a thought about this belief would
     cost and what has been counted since the last thought began (E6): a measurement printed side
     by side, never a number any verb reads. The counter is reset where a thought starts, so what
-    it shows is that thought's, and the label says so rather than leaving it to be assumed."""
+    it shows is that thought's, and the label says so rather than leaving it to be assumed.
+
+    A World of CHARTER v0.2 is read through the v0 World its episodes play on. Given `over` as
+    well -- a list of components the World declares in `locals` or `globals` -- it renders the
+    belief's marginal on them instead (kit v0.14, INTERFACE): `marginal` below."""
+    plated = world if isinstance(world, Plated) else None
+    if plated is not None:
+        world = plated.world
+    if over is not None:
+        return render(marginal(belief, plated, over))
     text = ", ".join(str(state) + " " + rational(p) for state, p in belief._w.items())
     if world is not None and world.dplus is not None:
         live = len(_measure(belief))
         text += (" | " + str(live) + " live: " + rational(world.ops[live]) + " operations predicted, "
                  + str(_counted()) + " counted since the last thought began")
     return render(text)
+
+
+def marginal(belief, plated, over):
+    """The belief's marginal on the components `over` names, in that order, as text: one line per
+    value of positive mass, in the order of the product of those components' declared values --
+    the values as a compact JSON array, with V2.13's escapes so any name is written unambiguously,
+    a space, and the mass as a pack writes a cell. `over` is a non-empty list of distinct
+    components of the World; anything else names nothing, and a v0 World declares no component."""
+    comps = plated.components() if plated is not None else {}
+    names = list(over) if isinstance(over, (list, tuple)) else None
+    if not names or len(set(names)) != len(names) or any(name not in comps for name in names):
+        raise Refused(UNKNOWN_NAME, "`over` names distinct components the World declares in its"
+                      + " locals or globals: " + repr(over))
+    where = [comps[name] for name in names]
+    mass = {}
+    for state, p in belief._w.items():
+        key = tuple([state[part][i] for part, i, _ in where])
+        mass[key] = mass.get(key, Fraction(0)) + p
+    lines = []
+    for key in product(*[values for _, _, values in where]):
+        p = mass.get(key)
+        if p:
+            lines.append(json.dumps(list(key), separators=(",", ":"), ensure_ascii=True) + " " + rational(p))
+    return "\n".join(lines)
