@@ -11,17 +11,17 @@ host may have from each name, and what it may not:
 
 | name | a host gets | a host does not get |
 |---|---|---|
-| `declare` | a sealed World, or `Refused` by name | a World built past a refusal |
+| `declare` | a sealed World; it raises `Refused` by name, as every verb refuses | a World built past a refusal |
 | `run` | a Result: acts, outcomes, status, prices and thought paid, S7's counts, E6's counts, the final Belief | the belief's weights: `final` is sealed |
 | `Door` | the class to subclass: `outcome` and `fire` are the host's | a way to mint an Obs other than `observe` |
-| `report` | a `Display` of a belief, and of E6's counts beside it | a number — the text is inert (S1) |
+| `report` | a `Display` of a belief, and of E6's counts beside it — or, with `over=`, its marginal on the components named (kit v0.14) | a number — the text is inert (S1) |
 | `Display` | `str()` | comparison, arithmetic, truth, hashing, length, indexing |
 | `refusals` | the exception classes and every refusal name | — |
 | `load_pack` | a pack's World spec, the pack parsed and never run | anything a pack could execute |
 | `from_json` | the wire's spec as INTERFACE's dict, rationals exact | a float: the wire refuses one as `FLOAT` |
 | `to_json` | a Result as text, rationals as `"p/q"`, the belief as `report`'s text | the belief as values: `wire.py` never opens a Belief |
 | `law` | the signed tags and kit tag this package was judged under | — |
-| `plate` | a Plate over a declared World: `run(door)` one episode at a time, its Counts, its falsifying record, S15's disclosure as a `Display` | P(Global \| Counts): Counts are facts a host may hold, the belief they give is not |
+| `plate` | a Plate over a declared World: `run(door)` one episode at a time, its Counts, its falsifying record, S15's disclosure as a `Display`, the next episode's prior as a sealed Belief (`prior()`) and §2's quantities there as a `Display` (`values()`, kit v0.14) | P(Global \| Counts) or an act's value as numbers: a host has them as `report` and `values` render them, and the act `values` names is fired only by `run` |
 | `digest` | V2.13's digest of Counts and falsifying records, the hex a pack writes | — it is a name, not a numeral (V2.12) |
 | `score` | V2.8's Score as a pack writes the cell, `"p/q"` text in decimal digits however many | a Fraction: the Score is a measurement a pack writes and `declare` checks, not a number a host acts on |
 | `e7` | E7's lines as a `Display`, each an exact rational | the lines as values (S1) |
@@ -53,7 +53,7 @@ they are the kernel's, and nothing in `API.md` names them.
 | `wald/disclose.py` | S15: the Global values no realisable design separates, and the classes of them that settle something an act can feel; it refuses nothing |
 | `wald/ship.py` | the three names a host ships Counts with — `digest`, `score` written as a pack writes it, `e7` as a `Display` — each a conversion around `canonical`, `counts` and `digits`, so a host needs no kit (brief 009) |
 | `wald/digits.py` | whole numbers of any length read from and written to decimal digits a piece at a time, so a Score of tens of thousands of digits is read and written without lifting Python's interpreter-wide limit on integer conversion, which the kernel never touches |
-| `wald/plate.py` | `Plate`: its Counts and its falsifying record and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) |
+| `wald/plate.py` | `Plate`: its Counts and its falsifying record and nothing else; one episode is the prior from Counts, `episode._play` unchanged, the After-act asked by name after the fire, the record in (S12, S13, J26) — and what a host may ask without playing one: that prior, sealed, and `decide.quantities` at it as text (brief 012) |
 | `wald/cells.py` | SURFACE §3: what a number may be, where it is housed, the `fitted` fence, the census of quantities by source, and v0.1's K16 provenance — what sources a cell descends from, so a meta-table cannot be handed one it could not have declared |
 | `wald/datafile.py` | SURFACE K5: a kernel's rows read from a JSON file beside the pack, pinned by the SHA-256 of its bytes — the only file the kernel ever reads |
 | `wald/law.py` | the three tags this package was judged under, in one place, so a consumer can print which law its wald obeys and the kit can hold it to the lock |

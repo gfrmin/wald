@@ -37,11 +37,14 @@ class Plated:
     joint prior; `pg` is P(Global) and `pl` P(state | Global), over the states of Omega only;
     `counts` and `falsifiers` are what the declaration shipped, and `ships` whether it shipped
     anything at all -- empty Counts are Counts (V2.6); `declares` says whether any Global
-    dimension was declared (S15 speaks only then)."""
+    dimension was declared (S15 speaks only then). `dims` is the declared locals and Globals,
+    each a tuple of (name, values), so a host may name a component in `report` (kit v0.14)."""
 
-    __slots__ = ("world", "pg", "pl", "after", "counts", "falsifiers", "score", "ships", "declares")
+    __slots__ = ("world", "pg", "pl", "after", "counts", "falsifiers", "score", "ships", "declares",
+                 "dims")
 
-    def __init__(self, world, pg, pl, after, counts, falsifiers, score, ships, declares):
+    def __init__(self, world, pg, pl, after, counts, falsifiers, score, ships, declares,
+                 dims=((), ())):
         self.world = world
         self.pg = pg
         self.pl = pl
@@ -51,11 +54,18 @@ class Plated:
         self.score = score
         self.ships = ships
         self.declares = declares
+        self.dims = dims
 
     def evidence(self):
         """Everything the plate's prior conditions on: the Counts and every falsifying record
         shipped with them (S13, J26)."""
         return self.counts + Counter(self.falsifiers)
+
+    def components(self):
+        """Every component of Omega by name: name -> (part, index, values), where a state is
+        (l, g) and part 0 is l, the locals, and 1 is g, the Globals. A v0 World declares none."""
+        return {name: (part, i, values) for part, dims in enumerate(self.dims)
+                for i, (name, values) in enumerate(dims)}
 
 
 def wrap(world):
@@ -171,8 +181,10 @@ def build(spec, floor=True):
                                   + " (S12; QUESTIONS.md Q10)")
 
     ships = spec.get("counts") is not None or bool(spec.get("falsifiers"))
+    dims = tuple(tuple((name, tuple(values)) for name, values in spec[part]) for part in ("locals", "globals"))
     return Plated(world, pg, pl, after, Counter(spec.get("counts") or {}),
-                  tuple(spec.get("falsifiers") or ()), spec.get("score"), ships, bool(spec["globals"]))
+                  tuple(spec.get("falsifiers") or ()), spec.get("score"), ships, bool(spec["globals"]),
+                  dims)
 
 
 def _unpaid(table, locs, globs, what):
