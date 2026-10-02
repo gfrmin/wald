@@ -145,7 +145,7 @@ def _cap(measure, mass, world, menu, v0):
     return max(v0, reach - min([world.O[name].price for name in menu]))
 
 
-def step(belief, world, n, used=frozenset()):
+def step(belief, world, n, used=frozenset(), memo=None):
     """decide+(b,M,n) of CHARTER v0.1 section 2: (the act, S7's bucket, the predicted cost paid).
 
         a v0 World (no Depth+)   -> the floor's act, "floor",      0
@@ -161,8 +161,13 @@ def step(belief, world, n, used=frozenset()):
 
     The floor is applied here, and here only, because ghat reads the raw n: at n <= d the deeper
     evaluation is the same evaluation. `decide` is unchanged -- it is decide_n at the n it is
-    given, and this is the step that knows which n that is (E3)."""
-    same, memo = world.work()
+    given, and this is the step that knows which n that is (E3).
+
+    The values already found are the World's (`world.work`) unless the caller brings its own: a
+    plate does, and keeps it only while its episodes' prior recurs (`plate.py`)."""
+    same, kept = world.work()
+    if memo is None:
+        memo = kept
     reps = tuple(world.T)
     used = frozenset(used)
     measure = _measure(belief)

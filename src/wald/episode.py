@@ -74,9 +74,10 @@ def run(world, door):
     return _play(world, prior(world), door)
 
 
-def _play(world, belief, door):
+def _play(world, belief, door, memo=None):
     """The loop of `run` from a given belief. `run` starts it from the World's Prior; a plate
-    starts it from the prior its Counts give (CHARTER v0.2 section 4), and the loop is the same."""
+    starts it from the prior its Counts give (CHARTER v0.2 section 4), and the loop is the same.
+    A plate also brings the values its lookahead has found; `run` uses the World's."""
     n = world.N
     used = set()
     acts, outcomes, paid = [], [], Fraction(0)
@@ -90,7 +91,7 @@ def _play(world, belief, door):
                       (draws, end, None))
 
     while True:
-        act, how, cost = step(belief, world, n, frozenset(used))
+        act, how, cost = step(belief, world, n, frozenset(used), memo)
         if how in steps:                        # S7's four; a v0 World's step is in none of them
             steps[how] += 1
         if how == THINK:
